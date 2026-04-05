@@ -1,0 +1,110 @@
+/* ---------- Testimonials Section ---------- */
+.testimonials-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.testimonial-carousel {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.testimonial-card {
+  text-align: center;
+  padding: var(--space-2xl) var(--space-2xl) var(--space-xl);
+  position: relative;
+}
+
+.testimonial-quote-icon {
+  color: var(--accent-primary);
+  opacity: 0.2;
+  margin-bottom: var(--space-md);
+}
+
+.testimonial-stars {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: var(--space-lg);
+}
+
+.testimonial-text {
+  font-size: var(--text-lg);
+  color: var(--text-primary);
+  line-height: 1.8;
+  font-style: italic;
+  margin-bottom: var(--space-xl);
+}
+
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+}
+
+.testimonial-avatar {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-full);
+  font-size: 1.5rem;
+}
+
+.testimonial-name {
+  font-weight: 700;
+  font-size: var(--text-base);
+  color: var(--text-primary);
+}
+
+.testimonial-role {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+/* Controls */
+.testimonial-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-lg);
+  margin-top: var(--space-xl);
+}
+
+.testimonial-dots {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.testimonial-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding: 0;
+}
+
+.testimonial-dot-active {
+  background: var(--accent-primary);
+  width: 24px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 8px var(--accent-primary-glow);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .testimonial-card {
+    padding: var(--space-lg);
+  }
+
+  .testimonial-text {
+    font-size: var(--text-base);
+  }
+}

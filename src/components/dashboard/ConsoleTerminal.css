@@ -1,0 +1,134 @@
+/* ---------- Console Terminal ---------- */
+.console-terminal {
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.console-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--bg-elevated);
+}
+
+.console-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+.console-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.search-bar-sm {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.5rem;
+}
+
+.search-bar-sm input {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+  outline: none;
+  width: 120px;
+}
+
+/* Terminal Window */
+.terminal-window {
+  flex: 1;
+  background: #000;
+  padding: var(--space-md);
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+  color: #ccc;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-primary) transparent;
+}
+
+.terminal-empty {
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: var(--space-2xl);
+  font-style: italic;
+}
+
+.log-entry {
+  display: flex;
+  gap: 8px;
+  word-break: break-word;
+  margin-bottom: 2px;
+}
+
+.log-entry:hover {
+  background: hsla(0, 0%, 100%, 0.05);
+}
+
+.log-time {
+  color: #888;
+  flex-shrink: 0;
+}
+
+.log-thread {
+  color: #aaa;
+  flex-shrink: 0;
+}
+
+.log-msg {
+  color: #eee;
+}
+
+.input-msg {
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+/* Input Area */
+.console-input-area {
+  display: flex;
+  align-items: center;
+  padding: var(--space-md);
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border-primary);
+  gap: var(--space-sm);
+}
+
+.input-prefix {
+  font-family: var(--font-mono);
+  color: var(--accent-primary);
+  font-weight: 800;
+}
+
+.command-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  outline: none;
+}
+
+.send-btn {
+  padding: 0.5rem 1rem;
+}

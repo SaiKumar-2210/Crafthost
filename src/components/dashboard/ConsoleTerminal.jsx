@@ -1,0 +1,127 @@
+import { useState, useEffect, useRef } from 'react'
+import { Terminal as TerminalIcon, Play } from 'lucide-react'
+import { io } from 'socket.io-client'
+import { useParams } from 'react-router-dom'
+import './ConsoleTerminal.css'
+
+export default function ConsoleTerminal() {
+  const { id } = useParams()
+  const [logs, setLogs] = useState([
+    { id: 1, time: new Date().toLocaleTimeString('en-US', { hour12: false }), level: 'INFO', text: 'Connecting to console websocket...' }
+  ])
+  const [input, setInput] = useState('')
+  const [socket, setSocket] = useState(null)
+  const logsEndRef = useRef(null)
+
+  // Auto-scroll to bottom when logs update
+  useEffect(() => {
+    if (logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [logs])
+
+  // Setup WebSocket
+  useEffect(() => {
+    const newSocket = io('http://localhost:3000')
+    setSocket(newSocket)
+
+    newSocket.on('connect', () => {
+      newSocket.emit('join-server', id)
+      setLogs(prev => [...prev, {
+        id: Date.now(),
+        time: new Date().toLocaleTimeString('en-US', { hour12: false }),
+        level: 'INFO',
+        text: 'Connected to live console feed.'
+      }])
+    })
+
+    newSocket.on('console-log', (data) => {
+      // Split by newlines just in case
+      const lines = data.split('\n').filter(line => line.trim() !== '')
+      lines.forEach(line => {
+        let level = 'INFO'
+        if (line.includes('WARN')) level = 'WARN'
+        if (line.includes('ERROR') || line.includes('Exception') || line.includes('Failed')) level = 'ERROR'
+        
+        setLogs(prev => [...prev.slice(-150), { // Keep last 150 lines
+          id: Date.now() + Math.random(),
+          time: new Date().toLocaleTimeString('en-US', { hour12: false }),
+          level,
+          text: line.trim()
+        }])
+      })
+    })
+
+    newSocket.on('console-error', (data) => {
+      setLogs(prev => [...prev.slice(-150), {
+        id: Date.now() + Math.random(),
+        time: new Date().toLocaleTimeString('en-US', { hour12: false }),
+        level: 'ERROR',
+        text: data.toString().trim()
+      }])
+    })
+
+    return () => newSocket.close()
+  }, [id])
+
+  const handleCommandSubmit = (e) => {
+    e.preventDefault()
+    if (!input.trim() || !socket) return
+
+    setLogs(prev => [...prev, {
+      id: Date.now(),
+      time: new Date().toLocaleTimeString('en-US', { hour12: false }),
+      level: 'INPUT',
+      text: `> ${input}`
+    }])
+
+    socket.emit('send-command', { serverId: id, command: input })
+    setInput('')
+  }
+
+  const getLogColor = (level) => {
+    switch (level) {
+      case 'WARN': return 'text-warning'
+      case 'ERROR': return 'text-error'
+      case 'INPUT': return 'text-primary'
+      default: return 'text-secondary'
+    }
+  }
+
+  return (
+    <div className="console-terminal card">
+      <div className="console-header">
+        <TerminalIcon size={16} className="text-secondary" />
+        <span className="console-title font-semibold">Live Console</span>
+        <div className="console-badge badge badge-neutral">WebSocket Live</div>
+      </div>
+      
+      <div className="console-window">
+        {logs.map((log) => (
+          <div key={log.id} className="console-line">
+            <span className="console-time">[{log.time}]</span>
+            <span className={`console-level ${getLogColor(log.level)}`}>[{log.level}]</span>
+            <span className={`console-text ${log.level === 'INPUT' ? 'text-white font-semibold' : ''}`}>
+              {log.text}
+            </span>
+          </div>
+        ))}
+        <div ref={logsEndRef} />
+      </div>
+
+      <form className="console-input-area" onSubmit={handleCommandSubmit}>
+        <span className="console-prompt">&gt;</span>
+        <input
+          type="text"
+          className="console-input"
+          placeholder="Type a command (e.g. /help, /say, /weather clear)..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+        />
+        <button type="submit" className="console-btn">
+          <Play size={14} />
+        </button>
+      </form>
+    </div>
+  )
+}

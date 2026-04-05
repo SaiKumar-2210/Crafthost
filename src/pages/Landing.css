@@ -1,0 +1,5 @@
+/* ---------- Landing Page ---------- */
+.landing-page {
+  min-height: 100vh;
+  background: var(--bg-primary);
+}

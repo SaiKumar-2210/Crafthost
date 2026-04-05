@@ -1,0 +1,130 @@
+/* ---------- Player List ---------- */
+.player-list {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.player-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--bg-elevated);
+}
+
+.player-list-header .search-bar {
+  max-width: 300px;
+}
+
+.player-stats {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.player-table-container {
+  overflow-x: auto;
+}
+
+.player-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.player-table th {
+  padding: var(--space-sm) var(--space-lg);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--bg-card);
+}
+
+.player-table td {
+  padding: var(--space-sm) var(--space-lg);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.player-table tr:hover td {
+  background: var(--bg-elevated);
+}
+
+.player-table tr:last-child td {
+  border-bottom: none;
+}
+
+.player-name-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-weight: 600;
+}
+
+.player-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+}
+
+/* Roles */
+.role-badge {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.05em;
+}
+
+.role-admin {
+  background: hsla(0, 84%, 60%, 0.15);
+  color: var(--status-danger);
+}
+
+.role-moderator {
+  background: hsla(270, 70%, 60%, 0.15);
+  color: hsl(270, 70%, 70%);
+}
+
+.role-player {
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+}
+
+.gamemode-text {
+  text-transform: capitalize;
+  color: var(--text-secondary);
+}
+
+.ping-low {
+  color: var(--status-online);
+}
+
+.ping-high {
+  color: var(--status-warning);
+}
+
+.text-tertiary {
+  color: var(--text-tertiary);
+}
+
+.text-right {
+  text-align: right;
+}
+
+.player-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
