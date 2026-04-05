@@ -22,7 +22,7 @@ export default function ConsoleTerminal() {
 
   // Setup WebSocket
   useEffect(() => {
-    const newSocket = io('http://localhost:3000')
+    const newSocket = io('http://18.232.179.244:3000')
     setSocket(newSocket)
 
     newSocket.on('connect', () => {

@@ -1,7 +1,7 @@
 import { createContext, useState, useContext, useEffect } from 'react'
 
 const AppContext = createContext()
-const API_BASE = 'http://18.232.179.244/api'
+const API_BASE = 'http://18.232.179.244:3000/api'
 
 export function AppProvider({ children }) {
   // --- Auth State ---
