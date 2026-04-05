@@ -90,7 +90,7 @@ export default function Auth({ type = 'login' }) {
               <User size={18} className="input-icon" />
               <input 
                 type="text" 
-                name="username" 
+                name="name" 
                 placeholder="Username" 
                 className="form-control auth-input"
                 onChange={handleChange}
