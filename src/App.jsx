@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import { AppProvider } from './context/AppContext'
+import ProtectedRoute from './components/layout/ProtectedRoute'
 import Landing from './pages/Landing'
 import Dashboard from './pages/Dashboard'
 import ServerPanel from './pages/ServerPanel'
@@ -15,8 +16,12 @@ function App() {
         <Route path="/login" element={<Auth type="login" />} />
         <Route path="/signup" element={<Auth type="signup" />} />
         <Route path="/pricing" element={<PricingPage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/server/:id" element={<ServerPanel />} />
+        
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/server/:id" element={<ServerPanel />} />
+        </Route>
       </Routes>
     </AppProvider>
   )

@@ -5,33 +5,66 @@ const API_BASE = 'http://18.232.179.244:3000/api'
 
 export function AppProvider({ children }) {
   // --- Auth State ---
-  const [user, setUser] = useState({
-    name: 'Admin',
-    email: 'admin@crafthost.gg',
-    plan: 'Enterprise',
-    initials: 'AD'
-  })
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  const login = (email) => {
-    setUser({
-      name: email.split('@')[0],
-      email: email,
-      plan: 'Pro Plan',
-      initials: email.split('@')[0].substring(0, 2).toUpperCase()
-    })
+  // Verify token on load
+  useEffect(() => {
+    const verifyUser = async () => {
+      const token = localStorage.getItem('crafthost_token')
+      if (!token) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const data = await res.json()
+        
+        if (data.user) {
+          setUser({ ...data.user, initials: data.user.name.substring(0, 2).toUpperCase() })
+        } else {
+          localStorage.removeItem('crafthost_token')
+        }
+      } catch (err) {
+        console.error('Auth verification failed', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    verifyUser()
+  }, [])
+
+  const login = (userData, token) => {
+    localStorage.setItem('crafthost_token', token)
+    setUser({ ...userData, initials: userData.name.substring(0, 2).toUpperCase() })
   }
 
   const logout = () => {
+    localStorage.removeItem('crafthost_token')
     setUser(null)
   }
 
   // --- Servers State ---
   const [servers, setServers] = useState([])
 
+  const getAuthHeaders = () => {
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('crafthost_token')}`
+    }
+  }
+
   // Fetch servers from real backend
   const fetchServers = async () => {
+    if (!localStorage.getItem('crafthost_token')) return;
     try {
-      const res = await fetch(`${API_BASE}/servers`)
+      const res = await fetch(`${API_BASE}/servers`, {
+        headers: getAuthHeaders()
+      })
       const data = await res.json()
       setServers(data.servers || [])
     } catch (e) {
@@ -40,33 +73,30 @@ export function AppProvider({ children }) {
   }
 
   useEffect(() => {
-    // Initial fetch
     fetchServers()
-    // Poll every 3 seconds to keep status in sync with backend
     const interval = setInterval(fetchServers, 3000)
     return () => clearInterval(interval)
-  }, [])
+  }, [user])
 
   // --- Actions ---
   const deployServer = async (name, version) => {
     try {
       await fetch(`${API_BASE}/servers/deploy`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ 
           name: name || 'New Vanilla Server', 
           versionType: 'Paper', 
-          versionNumber: '1.16.5' // Using 1.16.5 specifically for Java 8 compatibility
+          versionNumber: '1.16.5'
         })
       })
-      await fetchServers() // Refresh list immediately
+      await fetchServers()
     } catch (e) {
       console.error("Deploy failed", e)
     }
   }
 
   const toggleServerStatus = async (id, targetStatus) => {
-    // Optimistic UI update
     setServers(prev => prev.map(s => {
       if (s.id === id) {
         if (targetStatus === 'start' || targetStatus === 'restart') return { ...s, status: 'starting' }
@@ -78,7 +108,7 @@ export function AppProvider({ children }) {
     try {
       await fetch(`${API_BASE}/servers/${id}/power`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ action: targetStatus })
       })
       await fetchServers()
@@ -89,7 +119,7 @@ export function AppProvider({ children }) {
 
   return (
     <AppContext.Provider value={{ 
-      user, login, logout,
+      user, loading, login, logout,
       servers, deployServer, toggleServerStatus
     }}>
       {children}

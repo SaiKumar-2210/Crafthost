@@ -7,6 +7,9 @@ const fs = require('fs');
 const path = require('path');
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
+const { connectDB } = require('./db');
+const { router: authRouter, protect } = require('./routes/auth');
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -18,6 +21,9 @@ const io = new Server(server, {
 
 app.use(cors());
 app.use(express.json());
+
+connectDB();
+app.use('/api/auth', authRouter);
 
 const SERVERS_DIR = path.join(__dirname, 'servers');
 const VERSIONS_DIR = path.join(__dirname, 'versions');
@@ -78,7 +84,7 @@ async function ensureServerJar(versionType, versionNumber) {
 }
 
 // API: Get Servers
-app.get('/api/servers', (req, res) => {
+app.get('/api/servers', protect, (req, res) => {
   const servers = fs.readdirSync(SERVERS_DIR).map(id => {
     const metaPath = path.join(SERVERS_DIR, id, 'crafthost-meta.json');
     let meta = { name: id, version: 'Unknown', status: 'offline' };
@@ -99,7 +105,7 @@ app.get('/api/servers', (req, res) => {
 });
 
 // API: Deploy Server
-app.post('/api/servers/deploy', async (req, res) => {
+app.post('/api/servers/deploy', protect, async (req, res) => {
   const { name, versionType = 'Paper', versionNumber = '1.16.5' } = req.body;
   const id = `srv-${Date.now()}`;
   const serverPath = path.join(SERVERS_DIR, id);
@@ -131,7 +137,7 @@ app.post('/api/servers/deploy', async (req, res) => {
 });
 
 // API: Power Toggle
-app.post('/api/servers/:id/power', async (req, res) => {
+app.post('/api/servers/:id/power', protect, async (req, res) => {
   const { id } = req.params;
   const { action } = req.body; // 'start', 'stop', 'restart'
   const serverPath = path.join(SERVERS_DIR, id);

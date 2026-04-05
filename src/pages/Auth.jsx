@@ -4,32 +4,51 @@ import { Server, ArrowRight, Mail, Lock, User } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import './Auth.css'
 
-export default function Auth({ type }) {
+export default function Auth({ type = 'login' }) {
   const isLogin = type === 'login'
   const navigate = useNavigate()
   const { login } = useApp()
   
   const [formData, setFormData] = useState({
-    username: '',
+    name: '',
     email: '',
     password: ''
   })
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
+    setError('')
     
-    // Simulate API call, then redirect to dashboard
-    setTimeout(() => {
-      login(formData.email || 'user@example.com')
-      setLoading(false)
+    const API_BASE = 'http://18.232.179.244:3000/api'
+    const endpoint = isLogin ? '/auth/login' : '/auth/register'
+    
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+      
+      const data = await res.json()
+      
+      if (!res.ok) {
+        throw new Error(data.message || 'Authentication failed')
+      }
+      
+      login(data.user, data.token)
       navigate('/dashboard')
-    }, 1500)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -62,6 +81,8 @@ export default function Auth({ type }) {
         <div className="auth-divider">
           <span>or log in with email</span>
         </div>
+
+        {error && <div className="auth-error" style={{ color: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '10px', borderRadius: '4px', marginBottom: '15px', textAlign: 'center', fontSize: '0.9rem' }}>{error}</div>}
 
         <form className="auth-form" onSubmit={handleSubmit}>
           {!isLogin && (
