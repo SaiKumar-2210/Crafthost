@@ -218,6 +218,17 @@ io.on('connection', (socket) => {
   });
 });
 
+// === Monolithic Frontend Delivery ===
+// Serve the static React files from the vite dist build
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// Catch-all route to allow React Router to handle client-side routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+});
+
+// ===================================
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`CraftHost Backend API running on port ${PORT}`);

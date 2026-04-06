@@ -26,7 +26,7 @@ export default function Auth({ type = 'login' }) {
     setLoading(true)
     setError('')
     
-    const API_BASE = 'http://18.232.179.244:3000/api'
+    const API_BASE = '/api'
     const endpoint = isLogin ? '/auth/login' : '/auth/register'
     
     try {

@@ -22,7 +22,8 @@ export default function ConsoleTerminal() {
 
   // Setup WebSocket
   useEffect(() => {
-    const newSocket = io('http://18.232.179.244:3000')
+    // If we're strictly serving via monolothic backend, socket.io automatically infers host if no url is passed, but '/' works too.
+    const newSocket = io('/')
     setSocket(newSocket)
 
     newSocket.on('connect', () => {
