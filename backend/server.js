@@ -162,18 +162,26 @@ app.post('/api/servers/:id/power', protect, async (req, res) => {
       });
 
       runningProcesses[id] = serverProcess;
+      console.log(`[System] Java process spawned with pid ${serverProcess.pid}`);
 
       // Pipe stdout to WebSockets
       serverProcess.stdout.on('data', (data) => {
         io.to(`server-${id}`).emit('console-log', data.toString());
       });
 
-      // Catch stderr (like UnsupportedClassVersionError for Java mismatch)
+      // Catch stderr
       serverProcess.stderr.on('data', (data) => {
+        console.log(`[ERR] Java stderr: ${data}`);
         io.to(`server-${id}`).emit('console-error', data.toString());
       });
 
+      serverProcess.on('error', (err) => {
+        console.log(`[FATAL] Java spawn error: ${err.message}`);
+        io.to(`server-${id}`).emit('console-error', err.message);
+      });
+
       serverProcess.on('close', (code) => {
+        console.log(`[System] Java process closed with code ${code}`);
         io.to(`server-${id}`).emit('console-log', `[System] Server process closed with code ${code}\r\n`);
         delete runningProcesses[id];
         io.to(`server-${id}`).emit('status-update', 'offline');
