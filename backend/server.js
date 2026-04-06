@@ -73,30 +73,29 @@ async function downloadFile(url, dest) {
   });
 }
 
-// Ensure server jar exists
 async function ensureServerJar(versionType, versionNumber) {
+  // FORCE upgrade to 1.20.4 for Java 21 compatibility!
+  if (versionNumber === '1.16.5' || !versionNumber) {
+    console.log('[System] Intercepted 1.16.5 request. Forcing 1.20.4 for Java 21 compatibility.');
+    versionNumber = '1.20.4';
+  }
+
   const jarName = `${versionType}-${versionNumber}.jar`;
   const jarPath = path.join(VERSIONS_DIR, jarName);
   
   if (fs.existsSync(jarPath)) return jarPath;
 
   console.log(`[System] Downloading ${jarName}...`);
-  // Simplified logic for a few popular ones to simulate fetching
-  // In a production app, you'd integrate the Paper API or Mojang Metadata API
   let downloadUrl = '';
   
   if (versionType === 'Paper' && versionNumber === '1.20.4') {
     downloadUrl = 'https://api.papermc.io/v2/projects/paper/versions/1.20.4/builds/496/downloads/paper-1.20.4-496.jar';
   } else if (versionType === 'Vanilla' && versionNumber === '1.20.4') {
     downloadUrl = 'https://piston-data.mojang.com/v1/objects/8dd1a28015f51b1803213892b50b7b4fc76e594d/server.jar'; // 1.20.4 vanilla
-  } else if (versionType === 'Vanilla' && versionNumber === '1.16.5') {
-    downloadUrl = 'https://launcher.mojang.com/v1/objects/1b557e7b033b583cd9f66746b7a9ab1ec1673ce3/server.jar'; // 1.16.5 vanilla
-  } else if (versionType === 'Paper' && versionNumber === '1.16.5') {
-    downloadUrl = 'https://api.papermc.io/v2/projects/paper/versions/1.16.5/builds/794/downloads/paper-1.16.5-794.jar';
   } else {
-    // Fallback to Paper 1.16.5 if unknown (since user has Java 8)
-    downloadUrl = 'https://api.papermc.io/v2/projects/paper/versions/1.16.5/builds/794/downloads/paper-1.16.5-794.jar';
-    console.log(`[System] Unknown version. Defaulting to Paper 1.16.5 for Java 8 compatibility.`);
+    // Fallback to Paper 1.20.4 
+    downloadUrl = 'https://api.papermc.io/v2/projects/paper/versions/1.20.4/builds/496/downloads/paper-1.20.4-496.jar';
+    console.log(`[System] Unknown version. Defaulting to Paper 1.20.4`);
   }
 
   try {
