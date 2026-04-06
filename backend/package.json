@@ -15,7 +15,9 @@
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "minecraft-server-util": "^5.4.4",
     "mongoose": "^9.4.1",
+    "multer": "^2.1.1",
     "node-fetch": "^3.3.2",
     "socket.io": "^4.8.3"
   }

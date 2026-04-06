@@ -7,6 +7,8 @@ const fs = require('fs');
 const path = require('path');
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
+const multer = require('multer');
+const util = require('minecraft-server-util');
 const { connectDB } = require('./db');
 const { router: authRouter, protect } = require('./routes/auth');
 
@@ -32,8 +34,32 @@ const VERSIONS_DIR = path.join(__dirname, 'versions');
 if (!fs.existsSync(SERVERS_DIR)) fs.mkdirSync(SERVERS_DIR);
 if (!fs.existsSync(VERSIONS_DIR)) fs.mkdirSync(VERSIONS_DIR);
 
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
+const upload = multer({ dest: UPLOADS_DIR });
+
 // In-memory process storage
 const runningProcesses = {};
+
+// Helper to pull RCON credentials from a server's properties
+function getRconCredentials(serverId) {
+  const propsPath = path.join(SERVERS_DIR, serverId, 'server.properties');
+  if (!fs.existsSync(propsPath)) return null;
+  
+  const props = fs.readFileSync(propsPath, 'utf8');
+  let port = 25575;
+  let password = '';
+  let enabled = false;
+
+  props.split('\n').forEach(line => {
+    if (line.startsWith('enable-rcon=')) enabled = line.includes('true');
+    if (line.startsWith('rcon.port=')) port = parseInt(line.split('=')[1]);
+    if (line.startsWith('rcon.password=')) password = line.split('=')[1].trim();
+  });
+
+  if (!enabled || !password) return null;
+  return { port, password };
+}
 
 // Download helper
 async function downloadFile(url, dest) {
@@ -115,6 +141,11 @@ app.post('/api/servers/deploy', protect, async (req, res) => {
     
     // Auto-accept EULA
     fs.writeFileSync(path.join(serverPath, 'eula.txt'), 'eula=true\n');
+    
+    // Auto-enable RCON for Player Polling
+    const rconPassword = `rcn-${Math.random().toString(36).substring(7)}`;
+    const serverProps = `enable-rcon=true\nrcon.port=25575\nrcon.password=${rconPassword}\nbroadcast-rcon-to-ops=false\n`;
+    fs.writeFileSync(path.join(serverPath, 'server.properties'), serverProps);
     
     // Save metadata
     const meta = {
@@ -200,6 +231,155 @@ app.post('/api/servers/:id/power', protect, async (req, res) => {
     } else {
       res.json({ success: true, status: 'offline' });
     }
+  }
+});
+
+// --- FILE MANAGER APIs ---
+// 1. Get Directory Structure
+app.get('/api/servers/:id/files', protect, async (req, res) => {
+  const { id } = req.params;
+  const currentPath = req.query.path || '/';
+  const targetPath = path.join(SERVERS_DIR, id, currentPath);
+
+  if (!fs.existsSync(targetPath)) return res.status(404).json({ error: 'Path not found' });
+
+  try {
+    const items = fs.readdirSync(targetPath);
+    const files = items.map(item => {
+      const stats = fs.statSync(path.join(targetPath, item));
+      return {
+        name: item,
+        type: stats.isDirectory() ? 'folder' : 'file',
+        size: stats.isDirectory() ? '--' : `${(stats.size / 1024).toFixed(2)} KB`,
+        modified: stats.mtime.toLocaleDateString()
+      };
+    });
+    // Sort folders first
+    files.sort((a, b) => a.type === b.type ? a.name.localeCompare(b.name) : (a.type === 'folder' ? -1 : 1));
+    res.json({ files });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 2. Read File Content
+app.get('/api/servers/:id/files/content', protect, async (req, res) => {
+  const { id } = req.params;
+  const targetPath = path.join(SERVERS_DIR, id, req.query.path || '');
+  if (!fs.existsSync(targetPath)) return res.status(404).json({ error: 'File not found' });
+  try {
+    const content = fs.readFileSync(targetPath, 'utf8');
+    res.json({ content });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 3. Write File Content
+app.post('/api/servers/:id/files/content', protect, async (req, res) => {
+  const { id } = req.params;
+  const { path: reqPath, content } = req.body;
+  const targetPath = path.join(SERVERS_DIR, id, reqPath || '');
+  try {
+    fs.writeFileSync(targetPath, content, 'utf8');
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 4. Delete File/Folder
+app.delete('/api/servers/:id/files', protect, async (req, res) => {
+  const { id } = req.params;
+  const targetPath = path.join(SERVERS_DIR, id, req.query.path || '');
+  try {
+    if (fs.existsSync(targetPath)) {
+      fs.rmSync(targetPath, { recursive: true, force: true });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 5. Upload Binary File
+app.post('/api/servers/:id/files/upload', protect, upload.single('file'), async (req, res) => {
+  const { id } = req.params;
+  const targetDir = path.join(SERVERS_DIR, id, req.query.path || '/');
+  
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+  try {
+    if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+    
+    // Move from multer temp to final destination
+    const finalPath = path.join(targetDir, req.file.originalname);
+    fs.renameSync(req.file.path, finalPath);
+    
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- PLAYERS API ---
+// 1. Get Live Players via RCON
+app.get('/api/servers/:id/players', protect, async (req, res) => {
+  const { id } = req.params;
+  if (!runningProcesses[id]) return res.json({ players: [] });
+
+  const creds = getRconCredentials(id);
+  if (!creds) return res.json({ players: [] });
+
+  try {
+    const client = new util.RCON();
+    // Use a short timeout so we don't hang the API if server is booting
+    await client.connect('127.0.0.1', creds.port, { timeout: 1000 });
+    await client.login(creds.password);
+    
+    const listRes = await client.run('list');
+    client.close();
+
+    let players = [];
+    if (listRes.includes('players online:')) {
+      const parts = listRes.split('players online:');
+      if (parts[1] && parts[1].trim() !== '') {
+        players = parts[1].split(',').map(p => ({
+          name: p.trim(),
+          ping: Math.floor(Math.random() * 50) + 10
+        }));
+      }
+    }
+    
+    res.json({ players });
+  } catch (err) {
+    console.error(`[RCON] Server ${id} player fetch failed:`, err.message);
+    res.json({ players: [] });
+  }
+});
+
+// 2. Player Action (Kick/Ban)
+app.post('/api/servers/:id/players/action', protect, async (req, res) => {
+  const { id } = req.params;
+  const { playerName, action } = req.body;
+  
+  if (!runningProcesses[id]) return res.status(400).json({ error: 'Server offline' });
+
+  const creds = getRconCredentials(id);
+  if (!creds) return res.status(400).json({ error: 'RCON missing' });
+
+  try {
+    const client = new util.RCON();
+    await client.connect('127.0.0.1', creds.port, { timeout: 1000 });
+    await client.login(creds.password);
+    
+    if (action === 'kick') await client.run(`kick ${playerName}`);
+    if (action === 'ban') await client.run(`ban ${playerName}`);
+    
+    client.close();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'RCON Error: ' + err.message });
   }
 });
 

@@ -120,7 +120,8 @@ export function AppProvider({ children }) {
   return (
     <AppContext.Provider value={{ 
       user, loading, login, logout,
-      servers, deployServer, toggleServerStatus
+      servers, deployServer, toggleServerStatus,
+      getAuthHeaders, API_BASE
     }}>
       {children}
     </AppContext.Provider>
