@@ -185,12 +185,11 @@ app.post('/api/servers/:id/power', protect, async (req, res) => {
 
     try {
       const jarPath = await ensureServerJar(meta.versionType, meta.versionNumber);
-      
-      // Spawn Java Process
-      const serverProcess = spawn('java', ['-Xmx2G', '-Xms1G', '-jar', jarPath, 'nogui'], {
+
+      // Spawn Java Process with lowered RAM to prevent AWS EC2 OOM Killer
+      const serverProcess = spawn('java', ['-Xmx1024M', '-Xms512M', '-jar', jarPath, 'nogui'], {
         cwd: serverPath
       });
-
       runningProcesses[id] = serverProcess;
       console.log(`[System] Java process spawned with pid ${serverProcess.pid}`);
 
@@ -210,9 +209,9 @@ app.post('/api/servers/:id/power', protect, async (req, res) => {
         io.to(`server-${id}`).emit('console-error', err.message);
       });
 
-      serverProcess.on('close', (code) => {
-        console.log(`[System] Java process closed with code ${code}`);
-        io.to(`server-${id}`).emit('console-log', `[System] Server process closed with code ${code}\r\n`);
+      serverProcess.on('close', (code, signal) => {
+        console.log(`[System] Java process closed with code ${code} signal ${signal}`);
+        io.to(`server-${id}`).emit('console-log', `[System] Server process closed with code ${code} signal ${signal}\r\n`);
         delete runningProcesses[id];
         io.to(`server-${id}`).emit('status-update', 'offline');
       });
