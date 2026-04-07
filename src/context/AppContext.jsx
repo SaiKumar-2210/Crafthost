@@ -87,7 +87,7 @@ export function AppProvider({ children }) {
         body: JSON.stringify({ 
           name: name || 'New Vanilla Server', 
           versionType: 'Paper', 
-          versionNumber: '1.20.4'
+          versionNumber: '1.21.4'
         })
       })
       await fetchServers()
