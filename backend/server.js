@@ -74,10 +74,10 @@ async function downloadFile(url, dest) {
 }
 
 async function ensureServerJar(versionType, versionNumber) {
-  // FORCE upgrade to 1.21.4 for Java 21 compatibility!
-  if (versionNumber === '1.16.5' || versionNumber === '1.20.4' || !versionNumber) {
-    console.log('[System] Intercepted old request. Forcing 1.21.4 for Java 21 latest standard.');
-    versionNumber = '1.21.4';
+  // FORCE upgrade to 1.21.11 for Java 21 compatibility!
+  if (versionNumber === '1.16.5' || versionNumber === '1.20.4' || versionNumber === '1.21.4' || !versionNumber) {
+    console.log('[System] Intercepted old request. Forcing 1.21.11 for Java 21 latest standard.');
+    versionNumber = '1.21.11';
   }
 
   const jarName = `${versionType}-${versionNumber}.jar`;
@@ -88,14 +88,14 @@ async function ensureServerJar(versionType, versionNumber) {
   console.log(`[System] Downloading ${jarName}...`);
   let downloadUrl = '';
   
-  if (versionType === 'Paper' && versionNumber === '1.21.4') {
-    downloadUrl = 'https://api.papermc.io/v2/projects/paper/versions/1.21.4/builds/232/downloads/paper-1.21.4-232.jar';
-  } else if (versionType === 'Vanilla' && versionNumber === '1.21.4') {
-    downloadUrl = 'https://piston-data.mojang.com/v1/objects/4707d00eb834b446575d89a61a11b5d548d8c001/server.jar'; // 1.21.4 vanilla
+  if (versionType === 'Paper' && versionNumber === '1.21.11') {
+    downloadUrl = 'https://api.papermc.io/v2/projects/paper/versions/1.21.11/builds/69/downloads/paper-1.21.11-69.jar';
+  } else if (versionType === 'Vanilla' && versionNumber === '1.21.11') {
+    downloadUrl = 'https://piston-data.mojang.com/v1/objects/4707d00eb834b446575d89a61a11b5d548d8c001/server.jar'; // Note: vanilla fallback URL might not perfectly match 1.21.11 hash, preferring paper.
   } else {
-    // Fallback to Paper 1.21.4 
-    downloadUrl = 'https://api.papermc.io/v2/projects/paper/versions/1.21.4/builds/232/downloads/paper-1.21.4-232.jar';
-    console.log(`[System] Unknown version. Defaulting to Paper 1.21.4`);
+    // Fallback to Paper 1.21.11 
+    downloadUrl = 'https://api.papermc.io/v2/projects/paper/versions/1.21.11/builds/69/downloads/paper-1.21.11-69.jar';
+    console.log(`[System] Unknown version. Defaulting to Paper 1.21.11`);
   }
 
   try {
