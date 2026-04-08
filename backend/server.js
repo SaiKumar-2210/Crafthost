@@ -175,7 +175,13 @@ app.post('/api/servers/:id/power', protect, async (req, res) => {
   if (!fs.existsSync(serverPath)) return res.status(404).json({ error: 'Server not found' });
 
   const metaPath = path.join(serverPath, 'crafthost-meta.json');
-  const meta = fs.existsSync(metaPath) ? require(metaPath) : { versionType: 'Paper', versionNumber: '1.16.5' };
+  let meta = fs.existsSync(metaPath) ? require(metaPath) : { versionType: 'Paper', versionNumber: '1.21.11' };
+
+  // Synchronize stale React Dashboard metrics globally
+  if (['1.16.5', '1.20.4', '1.21.4'].includes(meta.versionNumber) || !meta.versionNumber) {
+    meta.versionNumber = '1.21.11';
+    fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
+  }
 
   if (action === 'start' || action === 'restart') {
     if (runningProcesses[id]) {
