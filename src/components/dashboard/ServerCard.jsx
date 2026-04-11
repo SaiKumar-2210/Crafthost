@@ -28,7 +28,7 @@ export default function ServerCard({ server }) {
           <div>
             <h3 className="server-name">{server.name}</h3>
             <div className="server-ip">
-              <span>{server.ip || 'Provisioning...'}</span>
+              <span>{server.ip ? (server.port ? `${server.ip}:${server.port}` : server.ip) : 'Provisioning...'}</span>
               <button className="btn-icon btn-ghost btn-xs copy-btn"><Copy size={12} /></button>
             </div>
           </div>

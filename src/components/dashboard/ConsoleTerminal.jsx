@@ -100,24 +100,30 @@ export default function ConsoleTerminal() {
       <div className="console-window">
         {logs.map((log) => (
           <div key={log.id} className="console-line">
-            <span className="console-time">[{log.time}]</span>
-            <span className={`console-level ${getLogColor(log.level)}`}>[{log.level}]</span>
-            <span className={`console-text ${log.level === 'INPUT' ? 'text-white font-semibold' : ''}`}>
-              {log.text}
-            </span>
+            {log.level === 'INPUT' ? (
+              <span className="console-text input-text">{log.text}</span>
+            ) : (
+              <>
+                <span className="console-time">[{log.time}]</span>
+                <span className={`console-level ${getLogColor(log.level)}`}>[{log.level}]</span>
+                <span className="console-text">{log.text}</span>
+              </>
+            )}
           </div>
         ))}
         <div ref={logsEndRef} />
       </div>
 
       <form className="console-input-area" onSubmit={handleCommandSubmit}>
-        <span className="console-prompt">&gt;</span>
+        <span className="console-prompt">root@crafthost:~#</span>
         <input
           type="text"
           className="console-input"
-          placeholder="Type a command (e.g. /help, /say, /weather clear)..."
+          placeholder="_"
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          autoComplete="off"
+          spellCheck="false"
         />
         <button type="submit" className="console-btn">
           <Play size={14} />

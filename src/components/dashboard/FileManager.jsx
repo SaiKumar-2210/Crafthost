@@ -125,6 +125,36 @@ export default function FileManager() {
     }
   }
 
+  const downloadFolder = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/servers/${id}/files/download?path=${encodeURIComponent(currentPath)}`, {
+        headers: getAuthHeaders()
+      })
+      if (res.ok) {
+        const blob = await res.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.style.display = 'none'
+        a.href = url
+        
+        // intelligently name the zip file
+        const safeName = currentPath === '/' ? 'server-backup' : currentPath.split('/').filter(Boolean).pop()
+        a.download = `${safeName}.zip`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+      } else {
+        alert("Download failed on backend.")
+      }
+    } catch (err) {
+      console.error(err)
+      alert("Download failed")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   if (editingFile) {
     return (
       <div className="file-manager card file-editor">
@@ -146,6 +176,7 @@ export default function FileManager() {
           value={fileContent}
           onChange={e => setFileContent(e.target.value)}
           spellCheck="false"
+          style={{ height: '75vh', width: '100%', padding: '16px', fontFamily: "'Fira Code', 'Courier New', monospace", backgroundColor: '#1e1e1e', color: '#d4d4d4', border: '1px solid #333', borderRadius: '4px', resize: 'none', outline: 'none', lineHeight: '1.5' }}
         />
       </div>
     )
@@ -158,6 +189,10 @@ export default function FileManager() {
           <span className="crumb crumb-active">{currentPath}</span>
         </div>
         <div className="file-actions">
+          <button className="btn btn-secondary btn-sm" onClick={downloadFolder} disabled={loading}>
+            <Download size={14} />
+            <span>{loading ? 'Zipping...' : 'Download ZIP'}</span>
+          </button>
           <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={uploadFile} />
           <button className="btn btn-primary btn-sm" onClick={() => fileInputRef.current?.click()}>
             <Upload size={14} />

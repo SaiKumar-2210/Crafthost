@@ -9,6 +9,7 @@ const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch
 
 const multer = require('multer');
 const util = require('minecraft-server-util');
+const archiver = require('archiver');
 const { connectDB } = require('./db');
 const { router: authRouter, protect } = require('./routes/auth');
 
@@ -129,7 +130,6 @@ app.get('/api/servers', protect, (req, res) => {
   res.json({ servers });
 });
 
-// API: Deploy Server
 app.post('/api/servers/deploy', protect, async (req, res) => {
   const { name, versionType = 'Paper', versionNumber = '1.16.5' } = req.body;
   const id = `srv-${Date.now()}`;
@@ -138,12 +138,17 @@ app.post('/api/servers/deploy', protect, async (req, res) => {
   try {
     fs.mkdirSync(serverPath);
     
+    // Dynamic Port Allocation
+    const existingServers = fs.readdirSync(SERVERS_DIR).length;
+    const assignedPort = 25565 + existingServers;
+    const rconPort = 25575 + existingServers;
+    
     // Auto-accept EULA
     fs.writeFileSync(path.join(serverPath, 'eula.txt'), 'eula=true\n');
     
-    // Auto-enable RCON for Player Polling
+    // Auto-enable RCON, assign dynamic ports, and force offline-mode=false
     const rconPassword = `rcn-${Math.random().toString(36).substring(7)}`;
-    const serverProps = `enable-rcon=true\nrcon.port=25575\nrcon.password=${rconPassword}\nbroadcast-rcon-to-ops=false\n`;
+    const serverProps = `enable-rcon=true\nrcon.port=${rconPort}\nrcon.password=${rconPassword}\nbroadcast-rcon-to-ops=false\nserver-port=${assignedPort}\nonline-mode=false\n`;
     fs.writeFileSync(path.join(serverPath, 'server.properties'), serverProps);
     
     // Save metadata
@@ -153,6 +158,7 @@ app.post('/api/servers/deploy', protect, async (req, res) => {
       versionType,
       versionNumber,
       ip: `node-${Math.floor(Math.random() * 100)}.crafthost.gg`,
+      port: assignedPort,
       players: '0/20',
       uptime: '0m',
       node: 'Local Windows Node'
@@ -326,6 +332,32 @@ app.post('/api/servers/:id/files/upload', protect, upload.single('file'), async 
   }
 });
 
+// 6. Download Folder as ZIP
+app.get('/api/servers/:id/files/download', protect, async (req, res) => {
+  const { id } = req.params;
+  const targetPath = path.join(SERVERS_DIR, id, req.query.path || '/');
+
+  if (!fs.existsSync(targetPath)) return res.status(404).json({ error: 'Path not found' });
+
+  const stats = fs.statSync(targetPath);
+  if (stats.isFile()) {
+    // Single file download
+    res.download(targetPath);
+  } else {
+    // Folder zip stream download
+    const folderName = path.basename(targetPath) || id;
+    res.attachment(`${folderName}.zip`);
+    
+    const archive = archiver('zip', { zlib: { level: 5 } });
+    archive.on('warning', err => { if (err.code !== 'ENOENT') throw err; });
+    archive.on('error', err => { throw err; });
+    
+    archive.pipe(res);
+    archive.directory(targetPath, false);
+    archive.finalize();
+  }
+});
+
 // --- PLAYERS API ---
 // 1. Get Live Players via RCON
 app.get('/api/servers/:id/players', protect, async (req, res) => {
@@ -345,10 +377,11 @@ app.get('/api/servers/:id/players', protect, async (req, res) => {
     client.close();
 
     let players = [];
-    if (listRes.includes('players online:')) {
-      const parts = listRes.split('players online:');
-      if (parts[1] && parts[1].trim() !== '') {
-        players = parts[1].split(',').map(p => ({
+    const match = listRes.match(/players online:\s*(.*)/i);
+    if (match && match[1]) {
+      const namesStr = match[1].replace(/§[0-9a-fk-or]/ig, '').trim(); // Remove color codes
+      if (namesStr !== '') {
+        players = namesStr.split(',').map(p => ({
           name: p.trim(),
           ping: Math.floor(Math.random() * 50) + 10
         }));
