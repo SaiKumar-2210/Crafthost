@@ -91,8 +91,17 @@ export default function ServerPanel() {
               <div>
                 <h1 className="server-banner-name">{server.name}</h1>
                 <div className="server-banner-ip">
-                  <span>{server.ip}</span>
-                  <button className="btn-icon btn-ghost btn-xs"><Copy size={12} /></button>
+                  <span>{server.ip ? (server.port ? `${server.ip}:${server.port}` : server.ip) : 'Provisioning...'}</span>
+                  <button 
+                    className="btn-icon btn-ghost btn-xs"
+                    onClick={() => {
+                      const ipText = server.ip ? (server.port ? `${server.ip}:${server.port}` : server.ip) : '';
+                      if (ipText) navigator.clipboard.writeText(ipText);
+                      alert("Copied IP to clipboard!");
+                    }}
+                  >
+                    <Copy size={12} />
+                  </button>
                 </div>
               </div>
             </div>
