@@ -146,6 +146,16 @@ app.post('/api/servers/deploy', protect, async (req, res) => {
     // Auto-accept EULA
     fs.writeFileSync(path.join(serverPath, 'eula.txt'), 'eula=true\n');
     
+    // Fetch Live AWS Public IP
+    let publicIp = 'unknown-ip';
+    try {
+      const ipRes = await fetch('https://api.ipify.org?format=json');
+      const ipData = await ipRes.json();
+      publicIp = ipData.ip || 'unknown-ip';
+    } catch (e) {
+      console.error('[System] Could not fetch public IP for deployment:', e.message);
+    }
+    
     // Auto-enable RCON, assign dynamic ports, and force offline-mode=false
     const rconPassword = `rcn-${Math.random().toString(36).substring(7)}`;
     const serverProps = `enable-rcon=true\nrcon.port=${rconPort}\nrcon.password=${rconPassword}\nbroadcast-rcon-to-ops=false\nserver-port=${assignedPort}\nonline-mode=false\n`;
@@ -157,7 +167,7 @@ app.post('/api/servers/deploy', protect, async (req, res) => {
       name: name || 'New Server',
       versionType,
       versionNumber,
-      ip: `node-${Math.floor(Math.random() * 100)}.crafthost.gg`,
+      ip: publicIp,
       port: assignedPort,
       players: '0/20',
       uptime: '0m',

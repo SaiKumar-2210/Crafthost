@@ -29,7 +29,16 @@ export default function ServerCard({ server }) {
             <h3 className="server-name">{server.name}</h3>
             <div className="server-ip">
               <span>{server.ip ? (server.port ? `${server.ip}:${server.port}` : server.ip) : 'Provisioning...'}</span>
-              <button className="btn-icon btn-ghost btn-xs copy-btn"><Copy size={12} /></button>
+              <button 
+                className="btn-icon btn-ghost btn-xs copy-btn"
+                onClick={() => {
+                  const ipText = server.ip ? (server.port ? `${server.ip}:${server.port}` : server.ip) : '';
+                  if (ipText) navigator.clipboard.writeText(ipText);
+                  alert("Copied IP to clipboard!");
+                }}
+              >
+                <Copy size={12} />
+              </button>
             </div>
           </div>
         </div>
