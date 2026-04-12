@@ -254,6 +254,27 @@ app.post('/api/servers/:id/power', protect, async (req, res) => {
   }
 });
 
+// API: Delete Server
+app.delete('/api/servers/:id', protect, (req, res) => {
+  const { id } = req.params;
+  const serverPath = path.join(SERVERS_DIR, id);
+  
+  if (!fs.existsSync(serverPath)) return res.status(404).json({ error: 'Server not found' });
+  
+  // Kill process if running
+  if (runningProcesses[id]) {
+    runningProcesses[id].kill('SIGKILL');
+    delete runningProcesses[id];
+  }
+  
+  try {
+    fs.rmSync(serverPath, { recursive: true, force: true });
+    res.json({ success: true, message: 'Server destroyed' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete server: ' + error.message });
+  }
+});
+
 // --- FILE MANAGER APIs ---
 // 1. Get Directory Structure
 app.get('/api/servers/:id/files', protect, async (req, res) => {
