@@ -111,21 +111,24 @@ async function ensureServerJar(versionType, versionNumber) {
 
 // API: Get Servers
 app.get('/api/servers', protect, (req, res) => {
-  const servers = fs.readdirSync(SERVERS_DIR).map(id => {
+  const servers = [];
+  const dirs = fs.readdirSync(SERVERS_DIR);
+  
+  for (const id of dirs) {
     const metaPath = path.join(SERVERS_DIR, id, 'crafthost-meta.json');
-    let meta = { name: id, version: 'Unknown', status: 'offline' };
+    if (!fs.existsSync(metaPath)) continue;
     
-    if (fs.existsSync(metaPath)) {
-      meta = require(metaPath);
-    }
+    let meta = require(metaPath);
+    // Legacy servers missing ownerId will be invisible to prevent cross-contamination.
+    // To claim them, manually add the user's stringified _id into the meta.json file physically!
+    if (!meta.ownerId || meta.ownerId !== req.user._id.toString()) continue;
     
     meta.id = id;
     meta.status = runningProcesses[id] ? 'online' : 'offline';
     meta.cpu = runningProcesses[id] ? 'Active' : '0%';
     meta.ram = runningProcesses[id] ? '1.2GB / 4GB' : '0GB / 4GB';
-    
-    return meta;
-  });
+    servers.push(meta);
+  }
   
   res.json({ servers });
 });
@@ -136,12 +139,39 @@ app.post('/api/servers/deploy', protect, async (req, res) => {
   const serverPath = path.join(SERVERS_DIR, id);
   
   try {
+    // Dynamic Scalable Port Allocation & Limits Check
+    const dirs = fs.readdirSync(SERVERS_DIR);
+    let userServersCount = 0;
+    let maxServerPort = 25564;
+    let maxRconPort = 25574;
+
+    dirs.forEach(d => {
+       const metaPath = path.join(SERVERS_DIR, d, 'crafthost-meta.json');
+       if(fs.existsSync(metaPath)) {
+          const m = require(metaPath);
+          if (m.ownerId === req.user._id.toString()) userServersCount++;
+          if (m.port && parseInt(m.port) > maxServerPort) maxServerPort = parseInt(m.port);
+       }
+       const propsPath = path.join(SERVERS_DIR, d, 'server.properties');
+       if (fs.existsSync(propsPath)) {
+          const props = fs.readFileSync(propsPath, 'utf8');
+          props.split('\n').forEach(l => {
+             if(l.startsWith('rcon.port=')) {
+                const rp = parseInt(l.split('=')[1]);
+                if (rp > maxRconPort) maxRconPort = rp;
+             }
+          });
+       }
+    });
+
+    if (userServersCount >= 5) {
+       return res.status(403).json({ error: "Maximum limit of 5 servers reached per account." });
+    }
+
+    const assignedPort = maxServerPort + 1;
+    const rconPort = maxRconPort + 1;
+
     fs.mkdirSync(serverPath);
-    
-    // Dynamic Port Allocation
-    const existingServers = fs.readdirSync(SERVERS_DIR).length;
-    const assignedPort = 25565 + existingServers;
-    const rconPort = 25575 + existingServers;
     
     // Auto-accept EULA
     fs.writeFileSync(path.join(serverPath, 'eula.txt'), 'eula=true\n');
@@ -165,6 +195,7 @@ app.post('/api/servers/deploy', protect, async (req, res) => {
     const meta = {
       id,
       name: name || 'New Server',
+      ownerId: req.user._id.toString(),
       versionType,
       versionNumber,
       ip: publicIp,
@@ -193,6 +224,8 @@ app.post('/api/servers/:id/power', protect, async (req, res) => {
   const metaPath = path.join(serverPath, 'crafthost-meta.json');
   let meta = fs.existsSync(metaPath) ? require(metaPath) : { versionType: 'Paper', versionNumber: '1.21.11' };
 
+  if (meta.ownerId && meta.ownerId !== req.user._id.toString()) return res.status(403).json({ error: 'Forbidden' });
+
   // Synchronize stale React Dashboard metrics globally
   if (['1.16.5', '1.20.4', '1.21.4'].includes(meta.versionNumber) || !meta.versionNumber) {
     meta.versionNumber = '1.21.11';
@@ -200,6 +233,18 @@ app.post('/api/servers/:id/power', protect, async (req, res) => {
   }
 
   if (action === 'start' || action === 'restart') {
+    // Limit Enforcement: Only 1 concurrently running server per user
+    const activeIds = Object.keys(runningProcesses);
+    for (let rId of activeIds) {
+       const rMetaPath = path.join(SERVERS_DIR, rId, 'crafthost-meta.json');
+       if(fs.existsSync(rMetaPath)) {
+          const rMeta = require(rMetaPath);
+          if(rMeta.ownerId === req.user._id.toString()) {
+              return res.status(403).json({ error: "You can only boot 1 server simultaneously to conserve compute limits." });
+          }
+       }
+    }
+
     if (runningProcesses[id]) {
       runningProcesses[id].kill('SIGINT');
       delete runningProcesses[id];
@@ -261,6 +306,12 @@ app.delete('/api/servers/:id', protect, (req, res) => {
   
   if (!fs.existsSync(serverPath)) return res.status(404).json({ error: 'Server not found' });
   
+  const metaPath = path.join(serverPath, 'crafthost-meta.json');
+  if (fs.existsSync(metaPath)) {
+     const meta = require(metaPath);
+     if (meta.ownerId && meta.ownerId !== req.user._id.toString()) return res.status(403).json({ error: 'Forbidden' });
+  }
+
   // Kill process if running
   if (runningProcesses[id]) {
     runningProcesses[id].kill('SIGKILL');
