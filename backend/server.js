@@ -120,9 +120,9 @@ app.get('/api/servers', protect, (req, res) => {
     
     let meta = require(metaPath);
     
-    // Auto-Adopt Legacy Servers: If an old testing server natively lacks an ownerId,
-    // gracefully assign ownership permanently to whoever is currently viewing the dashboard!
-    if (!meta.ownerId) {
+    // Auto-Adopt Legacy Servers securely:
+    // Only assign the original nodes to the specified admin developer email!
+    if (!meta.ownerId && meta.ip === 'node-3.crafthost.gg' && req.user.email === 'nb8500467@gmail.com') {
        meta.ownerId = req.user._id.toString();
        fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
     }
