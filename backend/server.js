@@ -119,9 +119,15 @@ app.get('/api/servers', protect, (req, res) => {
     if (!fs.existsSync(metaPath)) continue;
     
     let meta = require(metaPath);
-    // Legacy servers missing ownerId will be invisible to prevent cross-contamination.
-    // To claim them, manually add the user's stringified _id into the meta.json file physically!
-    if (!meta.ownerId || meta.ownerId !== req.user._id.toString()) continue;
+    
+    // Auto-Adopt Legacy Servers: If an old testing server natively lacks an ownerId,
+    // gracefully assign ownership permanently to whoever is currently viewing the dashboard!
+    if (!meta.ownerId) {
+       meta.ownerId = req.user._id.toString();
+       fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
+    }
+    
+    if (meta.ownerId !== req.user._id.toString()) continue;
     
     meta.id = id;
     meta.status = runningProcesses[id] ? 'online' : 'offline';
