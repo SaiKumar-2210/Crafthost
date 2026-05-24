@@ -9,10 +9,12 @@ const { connectDB, User, Server, ServerPermission, VMNode } = require('./db');
 const { router: authRouter, protect } = require('./routes/auth');
 const {
   isAzureConfigured,
+  ensureAzureVM,
   startAzureVM,
   deallocateAzureVM,
   getVMPublicIP,
-  getVMStatus
+  getVMStatus,
+  doesVMExist
 } = require('./azure-provisioner');
 
 const app = express();
@@ -21,6 +23,7 @@ const server = http.createServer(app);
 app.use(cors());
 app.use(express.json());
 connectDB();
+app.use('/api/auth', authRouter);
 
 // Initialize the VM Nodes in Database on startup
 async function initVMNodes() {
@@ -51,19 +54,27 @@ async function initVMNodes() {
 initVMNodes();
 
 // --- NODE REGISTRY ---
+// azureLocation must be a valid Azure region name (e.g. eastus, westindia)
 const NODES = {
-  'ap-south-1': { vmName: 'crafthost-vm-mumbai', region: 'Asia Pacific (Mumbai)' },
-  'us-east-1': { vmName: 'crafthost-vm-virginia', region: 'US East (N. Virginia)' },
-  'us-west-2': { vmName: 'crafthost-vm-oregon', region: 'US West (Oregon)' },
-  'eu-central-1': { vmName: 'crafthost-vm-frankfurt', region: 'Europe (Frankfurt)' },
-  'eu-west-1': { vmName: 'crafthost-vm-ireland', region: 'Europe (Ireland)' },
-  'ap-southeast-1': { vmName: 'crafthost-vm-singapore', region: 'Asia Pacific (Singapore)' },
-  'ap-northeast-1': { vmName: 'crafthost-vm-tokyo', region: 'Asia Pacific (Tokyo)' },
-  'au-southeast-2': { vmName: 'crafthost-vm-sydney', region: 'Australia (Sydney)' },
-  'sa-east-1': { vmName: 'crafthost-vm-saopaulo', region: 'South America (São Paulo)' }
+  'ap-south-1': { vmName: 'crafthost-vm-mumbai', region: 'Asia Pacific (Mumbai)', azureLocation: 'westindia' },
+  'us-east-1': { vmName: 'crafthost-vm-virginia', region: 'US East (N. Virginia)', azureLocation: 'eastus' },
+  'us-west-2': { vmName: 'crafthost-vm-oregon', region: 'US West (Oregon)', azureLocation: 'westus2' },
+  'eu-central-1': { vmName: 'crafthost-vm-frankfurt', region: 'Europe (Frankfurt)', azureLocation: 'germanywestcentral' },
+  'eu-west-1': { vmName: 'crafthost-vm-ireland', region: 'Europe (Ireland)', azureLocation: 'northeurope' },
+  'ap-southeast-1': { vmName: 'crafthost-vm-singapore', region: 'Asia Pacific (Singapore)', azureLocation: 'southeastasia' },
+  'ap-northeast-1': { vmName: 'crafthost-vm-tokyo', region: 'Asia Pacific (Tokyo)', azureLocation: 'japaneast' },
+  'au-southeast-2': { vmName: 'crafthost-vm-sydney', region: 'Australia (Sydney)', azureLocation: 'australiaeast' },
+  'sa-east-1': { vmName: 'crafthost-vm-saopaulo', region: 'South America (São Paulo)', azureLocation: 'brazilsouth' }
 };
 
 const DAEMON_SECRET = process.env.DAEMON_SECRET || 'crafthost-internal-node-secret';
+
+// Middleware for system-level endpoints (daemon downloads, etc.)
+const requireSystemSecret = (req, res, next) => {
+  const secret = req.headers['x-daemon-secret'];
+  if (secret !== DAEMON_SECRET) return res.status(403).json({ error: 'Unauthorized System Access' });
+  next();
+};
 
 // Helper to resolve daemon URL based on VMNode dynamic IP
 const getNodeUrlByRegion = async (region) => {
@@ -272,26 +283,54 @@ app.post('/api/servers/deploy', protect, checkLimits, async (req, res) => {
       await vmNode.save();
     }
 
-    // 2. If VM is deallocated, boot it first
-    if (isAzureConfigured && vmNode.status === 'deallocated') {
-      console.log(`[Azure Orchestrator] Deploy requested in deallocated node. Booting ${vmNode.vmName}...`);
-      await startAzureVM(vmNode.vmName);
-      vmNode.status = 'starting';
-      await vmNode.save();
-      
-      // Resolve Dynamic IP
-      let resolvedIp = null;
-      for (let attempt = 1; attempt <= 10; attempt++) {
-        await new Promise(r => setTimeout(r, 4000)); // wait 4 seconds per check
-        resolvedIp = await getVMPublicIP(vmNode.vmName);
-        if (resolvedIp) break;
+    // 2. If Azure is configured and VM literally doesn't exist yet, provision it from scratch
+    if (isAzureConfigured) {
+      const vmExists = await doesVMExist(registryNode.vmName);
+      if (!vmExists) {
+        console.log(`[Azure Orchestrator] VM ${registryNode.vmName} does not exist in Azure. Provisioning infrastructure...`);
+        await ensureAzureVM(registryNode.vmName, registryNode.azureLocation);
+
+        vmNode.status = 'starting';
+        await vmNode.save();
+
+        // Wait for dynamic IP allocation after creation
+        let resolvedIp = null;
+        for (let attempt = 1; attempt <= 15; attempt++) {
+          await new Promise(r => setTimeout(r, 4000));
+          resolvedIp = await getVMPublicIP(registryNode.vmName);
+          if (resolvedIp) break;
+        }
+        if (!resolvedIp) {
+          throw new Error(`Failed to resolve dynamic public IP for newly provisioned Azure VM ${registryNode.vmName}.`);
+        }
+        vmNode.ip = resolvedIp;
+        vmNode.status = 'running';
+        await vmNode.save();
+
+        // Give cloud-init time to install Node, Java, download daemon, and start PM2
+        console.log(`[Azure Orchestrator] Waiting 60s for cloud-init to complete on ${registryNode.vmName}...`);
+        await new Promise(r => setTimeout(r, 60000));
+      } else if (vmNode.status === 'deallocated') {
+        // VM exists but is stopped — just start it
+        console.log(`[Azure Orchestrator] Deploy requested in deallocated node. Booting ${vmNode.vmName}...`);
+        await startAzureVM(vmNode.vmName);
+        vmNode.status = 'starting';
+        await vmNode.save();
+        
+        // Resolve Dynamic IP
+        let resolvedIp = null;
+        for (let attempt = 1; attempt <= 10; attempt++) {
+          await new Promise(r => setTimeout(r, 4000));
+          resolvedIp = await getVMPublicIP(vmNode.vmName);
+          if (resolvedIp) break;
+        }
+        if (!resolvedIp) {
+          throw new Error(`Failed to resolve dynamic public IP for Azure VM ${vmNode.vmName}.`);
+        }
+        vmNode.ip = resolvedIp;
+        vmNode.status = 'running';
+        await vmNode.save();
       }
-      if (!resolvedIp) {
-        throw new Error(`Failed to resolve dynamic public IP for Azure VM ${vmNode.vmName}.`);
-      }
-      vmNode.ip = resolvedIp;
-      vmNode.status = 'running';
-      await vmNode.save();
     }
 
     const nodeUrl = await getNodeUrlByRegion(region);
@@ -350,36 +389,71 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
       await vmNode.save();
     }
 
-    // 1. If starting a server on a deallocated VM, boot the VM first!
-    if (action === 'start' && isAzureConfigured && vmNode.status === 'deallocated') {
-      console.log(`[Azure Orchestrator] Server start requested on deallocated node. Powering on Azure VM ${vmNode.vmName}...`);
-      await startAzureVM(vmNode.vmName);
+    // 1. If starting a server on a VM that doesn't exist or is deallocated, handle it
+    if (action === 'start' && isAzureConfigured) {
+      const vmExists = await doesVMExist(registryNode.vmName);
       
-      vmNode.status = 'starting';
-      await vmNode.save();
+      if (!vmExists) {
+        // VM doesn't exist in Azure yet — provision from scratch
+        console.log(`[Azure Orchestrator] Server start requested but VM ${vmNode.vmName} does not exist. Provisioning...`);
+        await ensureAzureVM(registryNode.vmName, registryNode.azureLocation);
 
-      // Resolve Dynamic IP
-      let resolvedIp = null;
-      for (let attempt = 1; attempt <= 10; attempt++) {
-        await new Promise(r => setTimeout(r, 4000));
-        resolvedIp = await getVMPublicIP(vmNode.vmName);
-        if (resolvedIp) break;
+        vmNode.status = 'starting';
+        await vmNode.save();
+
+        let resolvedIp = null;
+        for (let attempt = 1; attempt <= 15; attempt++) {
+          await new Promise(r => setTimeout(r, 4000));
+          resolvedIp = await getVMPublicIP(vmNode.vmName);
+          if (resolvedIp) break;
+        }
+        if (!resolvedIp) {
+          throw new Error(`Failed to resolve dynamic IP for newly provisioned Azure VM ${vmNode.vmName}`);
+        }
+        vmNode.ip = resolvedIp;
+        vmNode.status = 'running';
+        await vmNode.save();
+
+        // Update metadata on disk with the new IP address
+        const SERVERS_DIR = path.join(__dirname, 'servers');
+        const metaPath = path.join(SERVERS_DIR, id, 'crafthost-meta.json');
+        meta.ip = resolvedIp;
+        fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
+
+        // Wait for cloud-init to finish
+        console.log(`[Azure Orchestrator] Waiting 60s for cloud-init on ${vmNode.vmName}...`);
+        await new Promise(r => setTimeout(r, 60000));
+      } else if (vmNode.status === 'deallocated') {
+        // VM exists but is stopped — just start it
+        console.log(`[Azure Orchestrator] Server start requested on deallocated node. Powering on Azure VM ${vmNode.vmName}...`);
+        await startAzureVM(vmNode.vmName);
+        
+        vmNode.status = 'starting';
+        await vmNode.save();
+
+        // Resolve Dynamic IP
+        let resolvedIp = null;
+        for (let attempt = 1; attempt <= 10; attempt++) {
+          await new Promise(r => setTimeout(r, 4000));
+          resolvedIp = await getVMPublicIP(vmNode.vmName);
+          if (resolvedIp) break;
+        }
+        if (!resolvedIp) {
+          throw new Error(`Failed to resolve dynamic IP for Azure VM ${vmNode.vmName}`);
+        }
+        vmNode.ip = resolvedIp;
+        vmNode.status = 'running';
+        await vmNode.save();
+
+        // Update metadata on disk with the new IP address
+        const SERVERS_DIR = path.join(__dirname, 'servers');
+        const metaPath = path.join(SERVERS_DIR, id, 'crafthost-meta.json');
+        meta.ip = resolvedIp;
+        fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
+
+        // Wait a moment for Daemon script to start responding on port 4000
+        await new Promise(r => setTimeout(r, 5000));
       }
-      if (!resolvedIp) {
-        throw new Error(`Failed to resolve dynamic IP for Azure VM ${vmNode.vmName}`);
-      }
-      vmNode.ip = resolvedIp;
-      vmNode.status = 'running';
-      await vmNode.save();
-
-      // Update metadata on disk with the new IP address
-      const SERVERS_DIR = path.join(__dirname, 'servers');
-      const metaPath = path.join(SERVERS_DIR, id, 'crafthost-meta.json');
-      meta.ip = resolvedIp;
-      fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
-
-      // Wait a moment for Daemon script to start responding on port 4000
-      await new Promise(r => setTimeout(r, 5000));
     }
 
     const nodeUrl = await getNodeUrlByRegion(region);
@@ -653,6 +727,59 @@ app.get('/api/servers/:id/files/download', protect, checkServerAccess, requireFu
     res.status(500).json({ error: e.message });
   }
 });
+
+// --- SYSTEM ENDPOINTS (for Daemon VM bootstrapping) ---
+app.get('/api/system/daemon-script', requireSystemSecret, (req, res) => {
+  const daemonPath = path.join(__dirname, 'daemon.js');
+  if (!fs.existsSync(daemonPath)) {
+    return res.status(404).json({ error: 'daemon.js not found on Control Plane' });
+  }
+  res.setHeader('Content-Type', 'text/plain');
+  res.send(fs.readFileSync(daemonPath, 'utf8'));
+});
+
+app.get('/api/system/daemon-package', requireSystemSecret, (req, res) => {
+  const pkgPath = path.join(__dirname, 'package.json');
+  if (!fs.existsSync(pkgPath)) {
+    return res.status(404).json({ error: 'package.json not found on Control Plane' });
+  }
+  res.setHeader('Content-Type', 'application/json');
+  res.send(fs.readFileSync(pkgPath, 'utf8'));
+});
+
+// --- BACKGROUND IDLE VM COST-SAVING CHECK ---
+// Every 5 minutes, query all running VM nodes. If a node reports 0 active servers
+// via its daemon, deallocate it to stop Azure billing for compute hours.
+const IDLE_CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+setInterval(async () => {
+  if (!isAzureConfigured) return;
+
+  try {
+    const runningNodes = await VMNode.find({ status: 'running' });
+    for (const vmNode of runningNodes) {
+      try {
+        const nodeUrl = `http://${vmNode.ip}:4000`;
+        const statusRes = await fetch(`${nodeUrl}/api/daemon/status`, {
+          headers: { 'x-daemon-secret': DAEMON_SECRET }
+        });
+        const statusData = await statusRes.json();
+        const activeRunningCount = statusData.running ? statusData.running.length : 0;
+
+        if (activeRunningCount === 0) {
+          console.log(`[Azure Orchestrator] Background check: VM ${vmNode.vmName} has 0 running servers. Deallocating...`);
+          await deallocateAzureVM(vmNode.vmName);
+          vmNode.status = 'deallocated';
+          await vmNode.save();
+        }
+      } catch (err) {
+        // If daemon is unreachable, we can't safely deallocate (might be transient network issue)
+        console.error(`[Azure Orchestrator] Background check failed for ${vmNode.vmName}:`, err.message);
+      }
+    }
+  } catch (err) {
+    console.error('[Azure Orchestrator] Background idle check error:', err.message);
+  }
+}, IDLE_CHECK_INTERVAL_MS);
 
 // --- FRONTEND DELIVERY ---
 app.use(express.static(path.join(__dirname, '../dist')));
