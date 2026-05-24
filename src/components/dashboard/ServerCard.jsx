@@ -42,7 +42,11 @@ export default function ServerCard({ server }) {
             </div>
           </div>
         </div>
-        <div className="server-version badge badge-neutral">{server.versionType} {server.versionNumber}</div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div className="server-version badge badge-neutral">{server.node}</div>
+          <div className="server-version badge badge-neutral">{server.versionType} {server.versionNumber}</div>
+          {isOnline && <div className="server-version badge badge-success" style={{ backgroundColor: 'var(--success-color)', color: '#000', border: 'none' }}>Uptime: {server.uptime}</div>}
+        </div>
       </div>
 
       <div className="server-metrics">

@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { Server, Grid, TerminalSquare, FolderOpen, Users, HardDrive, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut } from 'lucide-react'
+import { Server, Grid, TerminalSquare, FolderOpen, Users, HardDrive, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import './Sidebar.css'
@@ -8,7 +8,7 @@ export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
-  const { user, logout } = useApp()
+  const { user, logout, setShowDeployModal } = useApp()
 
   const handleLogout = () => {
     logout()
@@ -91,6 +91,16 @@ export default function Sidebar() {
       </div>
 
       <div className="sidebar-footer">
+        <div style={{ padding: '0 1rem 1rem 1rem' }}>
+          <button 
+            className="btn btn-primary" 
+            style={{ width: '100%', justifyContent: collapsed ? 'center' : 'flex-start', padding: collapsed ? '0.75rem 0' : '0.75rem 1rem' }}
+            onClick={() => setShowDeployModal(true)}
+          >
+            <Plus size={18} />
+            {!collapsed && <span>Deploy Server</span>}
+          </button>
+        </div>
         <div className="user-profile">
           <div className="user-avatar">
             {user?.initials || 'GH'}

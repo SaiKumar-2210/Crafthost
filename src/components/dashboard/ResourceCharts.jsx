@@ -1,22 +1,8 @@
+import { useState, useEffect } from 'react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Cpu, HardDrive } from 'lucide-react'
+import { useApp } from '../../context/AppContext'
 import './ResourceCharts.css'
-
-const generateData = () => {
-  const data = []
-  let ram = 4.2
-  let cpu = 45
-  for (let i = 20; i >= 0; i--) {
-    data.push({
-      time: `-${i}m`,
-      ram: Math.max(1, Math.min(6, ram + (Math.random() - 0.5) * 0.5)),
-      cpu: Math.max(5, Math.min(100, cpu + (Math.random() - 0.5) * 15))
-    })
-  }
-  return data
-}
-
-const data = generateData()
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -33,6 +19,68 @@ const CustomTooltip = ({ active, payload, label }) => {
 }
 
 export default function ResourceCharts({ server }) {
+  const { getAuthHeaders, API_BASE } = useApp();
+  const [data, setData] = useState(Array.from({ length: 20 }, (_, i) => ({ time: `-${20 - i}s`, cpu: 0, ram: 0 })));
+  const [currentCpu, setCurrentCpu] = useState(0);
+  const [currentRam, setCurrentRam] = useState(0);
+
+  useEffect(() => {
+    let isInitialFetch = true;
+    if (server.status !== 'online' && server.status !== 'starting') return;
+
+    const fetchStats = async () => {
+      try {
+        if (isInitialFetch) {
+          const histRes = await fetch(`${API_BASE}/servers/${server.id}/stats-history`, { headers: getAuthHeaders() });
+          if (histRes.ok) {
+            const histData = await histRes.json();
+            if (histData.history && histData.history.length > 0) {
+              const formattedHistory = histData.history.map((h, i) => ({
+                time: `-${(histData.history.length - 1 - i) * 2}s`,
+                cpu: h.cpu,
+                ram: h.ram
+              }));
+              let nextData = [...formattedHistory];
+              while (nextData.length < 20) {
+                nextData.unshift({ time: `-${nextData.length * 2}s`, cpu: 0, ram: 0 });
+              }
+              if (nextData.length > 20) {
+                nextData = nextData.slice(nextData.length - 20);
+              }
+              setData(nextData);
+              const latest = histData.history[histData.history.length - 1];
+              setCurrentCpu(latest.cpu || 0);
+              setCurrentRam(latest.ram || 0);
+            }
+          }
+          isInitialFetch = false;
+        }
+
+        const res = await fetch(`${API_BASE}/servers/${server.id}/stats`, { headers: getAuthHeaders() });
+        if (res.ok) {
+          const stats = await res.json();
+          setCurrentCpu(stats.cpu || 0);
+          setCurrentRam(stats.ram || 0);
+          setData(prev => {
+            const next = [...prev.slice(1), { 
+              time: 'Now', 
+              cpu: stats.cpu || 0, 
+              ram: stats.ram || 0 
+            }];
+            return next.map((d, i) => ({ ...d, time: `-${(19 - i) * 2}s` }));
+          });
+        }
+      } catch (err) {
+        // ignore
+      }
+    };
+
+    fetchStats();
+
+    const interval = setInterval(fetchStats, 2000);
+    return () => clearInterval(interval);
+  }, [server.id, server.status]);
+
   return (
     <div className="resource-charts">
       <div className="chart-card card">
@@ -41,7 +89,7 @@ export default function ResourceCharts({ server }) {
             <Cpu size={16} className="text-secondary" />
             <h3>CPU Usage</h3>
           </div>
-          <span className="chart-current">{server.cpu}</span>
+          <span className="chart-current">{currentCpu.toFixed(1)}%</span>
         </div>
         <div className="chart-container">
           <ResponsiveContainer width="100%" height="100%">
@@ -77,7 +125,7 @@ export default function ResourceCharts({ server }) {
             <HardDrive size={16} className="text-secondary" />
             <h3>RAM Usage</h3>
           </div>
-          <span className="chart-current">{server.ram.split(' ')[0]}</span>
+          <span className="chart-current">{currentRam.toFixed(2)} GB</span>
         </div>
         <div className="chart-container">
           <ResponsiveContainer width="100%" height="100%">
@@ -90,7 +138,7 @@ export default function ResourceCharts({ server }) {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" vertical={false} />
               <XAxis dataKey="time" stroke="var(--text-tertiary)" fontSize={12} tickLine={false} axisLine={false} />
-              <YAxis domain={[0, 6]} stroke="var(--text-tertiary)" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis domain={[0, 'auto']} stroke="var(--text-tertiary)" fontSize={12} tickLine={false} axisLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Area 
                 type="monotone" 

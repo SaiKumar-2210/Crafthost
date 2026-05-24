@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Save, RefreshCcw, AlertTriangle, Trash2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Save, RefreshCcw, AlertTriangle, Trash2, Users, UserPlus, Shield } from 'lucide-react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
 import './ServerSettings.css'
@@ -7,13 +7,139 @@ import './ServerSettings.css'
 export default function ServerSettings() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { getAuthHeaders, API_BASE } = useApp()
+  const { getAuthHeaders, API_BASE, servers } = useApp()
   const [activeTab, setActiveTab] = useState('general')
+  const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [settings, setSettings] = useState(null)
+  const [loadingSettings, setLoadingSettings] = useState(true)
+  const [permissions, setPermissions] = useState([])
+  const [loadingPerms, setLoadingPerms] = useState(false)
 
-  const handleSubmit = (e) => {
+  const server = servers.find(s => s.id === id)
+  const isOnline = server?.status === 'online'
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/servers/${id}/settings`, {
+          headers: getAuthHeaders()
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setSettings(data)
+        }
+      } catch (err) {
+        console.error('Failed to fetch settings', err)
+      } finally {
+        setLoadingSettings(false)
+      }
+    }
+    fetchSettings()
+  }, [id])
+
+  useEffect(() => {
+    if (activeTab === 'access') {
+      fetchPermissions()
+    }
+  }, [activeTab, id])
+
+  const fetchPermissions = async () => {
+    setLoadingPerms(true)
+    try {
+      const res = await fetch(`${API_BASE}/servers/${id}/permissions`, { headers: getAuthHeaders() })
+      if (res.ok) {
+        const data = await res.json()
+        setPermissions(data.permissions || [])
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoadingPerms(false)
+    }
+  }
+
+  const handleShareAccess = async (e) => {
     e.preventDefault()
-    // Simulated save
+    const email = e.target.email.value
+    const role = e.target.role.value
+    
+    try {
+      const res = await fetch(`${API_BASE}/servers/${id}/permissions`, {
+        method: 'POST',
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, role })
+      })
+      if (res.ok) {
+        e.target.reset()
+        fetchPermissions()
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to share access')
+      }
+    } catch (err) {
+      alert('Error sharing access')
+    }
+  }
+
+  const handleRevokeAccess = async (userId) => {
+    if (!confirm('Are you sure you want to revoke access for this user?')) return
+    try {
+      const res = await fetch(`${API_BASE}/servers/${id}/permissions/${userId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      })
+      if (res.ok) {
+        fetchPermissions()
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to revoke access')
+      }
+    } catch (err) {
+      alert('Error revoking access')
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    
+    const formData = new FormData(e.target)
+    const payload = Object.fromEntries(formData.entries())
+
+    try {
+      const res = await fetch(`${API_BASE}/servers/${id}/settings`, {
+        method: 'POST',
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      if (res.ok) {
+        setSettings(payload)
+
+        // If the server is online, also apply the settings live via RCON commands
+        if (isOnline) {
+          const commands = []
+          if (payload.difficulty) commands.push(`difficulty ${payload.difficulty}`)
+          if (payload.gamemode) commands.push(`defaultgamemode ${payload.gamemode}`)
+          
+          for (const cmd of commands) {
+            try {
+              await fetch(`${API_BASE}/servers/${id}/players/action`, {
+                method: 'POST',
+                headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ playerName: '', action: cmd })
+              })
+            } catch (e) { /* best effort */ }
+          }
+        }
+
+        alert("Settings saved successfully." + (isOnline ? " Applied live to running server." : " Restart the server for changes to take effect."))
+      }
+    } catch (err) {
+      alert('Failed to save settings: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleDeleteServer = async () => {
@@ -41,6 +167,10 @@ export default function ServerSettings() {
     }
   }
 
+  if (loadingSettings) {
+    return <div className="server-settings"><div className="settings-content card" style={{ padding: '2rem', textAlign: 'center' }}>Loading settings...</div></div>
+  }
+
   return (
     <div className="server-settings">
       <div className="settings-sidebar">
@@ -50,12 +180,77 @@ export default function ServerSettings() {
           <button className="settings-nav-item">Network & Ports</button>
           <button className="settings-nav-item">World Management</button>
           <button className="settings-nav-item">Security</button>
+          <button className={`settings-nav-item ${activeTab === 'access' ? 'active' : ''}`} onClick={() => setActiveTab('access')}>Access Sharing</button>
           <button className={`settings-nav-item text-danger ${activeTab === 'danger' ? 'active' : ''}`} onClick={() => setActiveTab('danger')}>Danger Zone</button>
         </nav>
       </div>
       
       <div className="settings-content card">
-        {activeTab === 'danger' ? (
+        {activeTab === 'access' ? (
+          <div className="settings-form">
+            <div className="settings-header">
+              <div>
+                <h2 className="settings-title" style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                  <Users size={18} /> Access Sharing
+                </h2>
+                <p className="settings-desc">Grant other registered accounts access to manage this server.</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleShareAccess} className="settings-grid" style={{ marginTop: '2rem', marginBottom: '2rem', display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
+              <div className="form-group" style={{ flex: 2, marginBottom: 0 }}>
+                <label>User Email</label>
+                <input type="email" name="email" className="form-control" placeholder="user@example.com" required />
+              </div>
+              <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                <label>Role</label>
+                <select name="role" className="form-control" required>
+                  <option value="on_off">Power Only (Start/Stop)</option>
+                  <option value="full">Full Control</option>
+                </select>
+              </div>
+              <button type="submit" className="btn btn-primary">
+                <UserPlus size={16} /> Share
+              </button>
+            </form>
+
+            <div className="settings-grid">
+              <h3 style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Shared Users</h3>
+              {loadingPerms ? (
+                <div style={{ color: '#888' }}>Loading permissions...</div>
+              ) : permissions.length === 0 ? (
+                <div style={{ color: '#888', padding: '1rem', textAlign: 'center', border: '1px dashed var(--border-primary)', borderRadius: '8px' }}>
+                  Not shared with anyone yet.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {permissions.map((p, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', border: '1px solid var(--border-primary)', borderRadius: '8px', background: 'var(--bg-secondary)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>
+                          {p.name.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: '500', color: '#fff' }}>{p.name}</div>
+                          <div style={{ fontSize: '12px', color: '#aaa' }}>{p.email}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <span className={`badge ${p.role === 'full' ? 'badge-primary' : 'badge-neutral'}`} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Shield size={12} />
+                          {p.role === 'full' ? 'Full Control' : 'Power Only'}
+                        </span>
+                        <button className="btn-icon btn-ghost text-danger" title="Revoke Access" onClick={() => handleRevokeAccess(p.userId)}>
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : activeTab === 'danger' ? (
           <div className="settings-form">
             <div className="settings-header">
               <div>
@@ -88,16 +283,12 @@ export default function ServerSettings() {
             <div className="settings-header">
               <div>
                 <h2 className="settings-title">Game Settings</h2>
-                <p className="settings-desc">Configure core gameplay mechanics. Changes require a server restart to take effect.</p>
+                <p className="settings-desc">Configure core gameplay mechanics. {isOnline ? 'Changes will be applied live.' : 'Changes require a server restart to take effect.'}</p>
               </div>
               <div className="settings-actions">
-                <button type="button" className="btn btn-secondary btn-sm">
-                  <RefreshCcw size={14} />
-                  <span>Reset</span>
-                </button>
-                <button type="submit" className="btn btn-primary btn-sm">
+                <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
                   <Save size={14} />
-                  <span>Save Changes</span>
+                  <span>{saving ? 'Saving...' : 'Save Changes'}</span>
                 </button>
               </div>
             </div>
@@ -105,7 +296,7 @@ export default function ServerSettings() {
             <div className="settings-grid">
               <div className="form-group">
                 <label>Game Mode</label>
-                <select className="form-control" defaultValue="survival">
+                <select className="form-control" name="gamemode" defaultValue={settings?.gamemode || 'survival'}>
                   <option value="survival">Survival</option>
                   <option value="creative">Creative</option>
                   <option value="adventure">Adventure</option>
@@ -115,7 +306,7 @@ export default function ServerSettings() {
 
               <div className="form-group">
                 <label>Difficulty</label>
-                <select className="form-control" defaultValue="normal">
+                <select className="form-control" name="difficulty" defaultValue={settings?.difficulty || 'normal'}>
                   <option value="peaceful">Peaceful</option>
                   <option value="easy">Easy</option>
                   <option value="normal">Normal</option>
@@ -125,60 +316,14 @@ export default function ServerSettings() {
 
               <div className="form-group">
                 <label>Max Players</label>
-                <input type="number" className="form-control" defaultValue="50" min="1" max="1000" />
+                <input type="number" className="form-control" name="maxPlayers" defaultValue={settings?.maxPlayers || '20'} min="1" max="1000" />
               </div>
 
               <div className="form-group">
                 <label>View Distance</label>
-                <input type="number" className="form-control" defaultValue="10" min="2" max="32" />
+                <input type="number" className="form-control" name="viewDistance" defaultValue={settings?.viewDistance || '10'} min="2" max="32" />
                 <span className="form-hint">Higher values consume exponentially more RAM.</span>
               </div>
-            </div>
-
-            <div className="settings-toggles">
-              <label className="toggle-label">
-                <div className="toggle-info">
-                  <span className="toggle-title">Hardcore Mode</span>
-                  <span className="form-hint">Death is permanent. Players are banned upon dying.</span>
-                </div>
-                <div className="toggle-switch">
-                  <input type="checkbox" />
-                  <span className="slider"></span>
-                </div>
-              </label>
-
-              <label className="toggle-label">
-                <div className="toggle-info">
-                  <span className="toggle-title">Allow Nether</span>
-                  <span className="form-hint">Enable or disable the Nether dimension.</span>
-                </div>
-                <div className="toggle-switch">
-                  <input type="checkbox" defaultChecked />
-                  <span className="slider"></span>
-                </div>
-              </label>
-
-              <label className="toggle-label">
-                <div className="toggle-info">
-                  <span className="toggle-title">Spawn Monsters</span>
-                  <span className="form-hint">Determines if hostiles will spawn at night or in the dark.</span>
-                </div>
-                <div className="toggle-switch">
-                  <input type="checkbox" defaultChecked />
-                  <span className="slider"></span>
-                </div>
-              </label>
-              
-              <label className="toggle-label">
-                <div className="toggle-info">
-                  <span className="toggle-title">Force Gamemode</span>
-                  <span className="form-hint">Force players to join in the default gamemode.</span>
-                </div>
-                <div className="toggle-switch">
-                  <input type="checkbox" />
-                  <span className="slider"></span>
-                </div>
-              </label>
             </div>
           </form>
         )}

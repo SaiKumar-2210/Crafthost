@@ -1,44 +1,23 @@
-import { Server, Users, Cpu, Clock } from 'lucide-react'
+import { Server } from 'lucide-react'
+import { useApp } from '../../context/AppContext'
 import './StatsGrid.css'
 
-const stats = [
-  {
-    label: 'Total Servers',
-    value: '3',
-    change: '+1 this week',
-    trend: 'up',
-    icon: Server,
-    color: 'var(--accent-primary)'
-  },
-  {
-    label: 'Total Players',
-    value: '54',
-    change: 'Peak: 142 today',
-    trend: 'neutral',
-    icon: Users,
-    color: 'var(--accent-secondary)'
-  },
-  {
-    label: 'Avg RAM Usage',
-    value: '68%',
-    change: 'Stable',
-    trend: 'neutral',
-    icon: Cpu,
-    color: 'hsl(270, 70%, 60%)'
-  },
-  {
-    label: 'Network Uptime',
-    value: '99.99%',
-    change: '100% last 30d',
-    trend: 'up',
-    icon: Clock,
-    color: 'hsl(142, 70%, 45%)'
-  }
-]
-
 export default function StatsGrid() {
+  const { servers } = useApp()
+
+  const stats = [
+    {
+      label: 'Total Servers',
+      value: servers.length.toString(),
+      change: 'Active in your network',
+      trend: 'neutral',
+      icon: Server,
+      color: 'var(--accent-primary)'
+    }
+  ]
+
   return (
-    <div className="stats-grid stagger-children">
+    <div className="stats-grid stagger-children" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
       {stats.map((stat, index) => {
         const Icon = stat.icon
         return (

@@ -1,0 +1,12 @@
+{
+  "id": "srv-test",
+  "name": "Test",
+  "ownerId": "123",
+  "versionType": "Paper",
+  "versionNumber": "1.21.11",
+  "ip": "localhost",
+  "port": 25566,
+  "players": "0/20",
+  "uptime": "0m",
+  "node": "Local Windows Node"
+}

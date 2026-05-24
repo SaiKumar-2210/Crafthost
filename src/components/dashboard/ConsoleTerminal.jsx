@@ -28,23 +28,40 @@ export default function ConsoleTerminal() {
 
     newSocket.on('connect', () => {
       newSocket.emit('join-server', id)
-      setLogs(prev => [...prev, {
+      setLogs([{
         id: Date.now(),
         time: new Date().toLocaleTimeString('en-US', { hour12: false }),
         level: 'INFO',
-        text: 'Connected to live console feed.'
+        text: 'Connected to live console feed. Loading history...'
       }])
     })
 
+    newSocket.on('console-history', (historyString) => {
+      const lines = historyString.split('\n').filter(line => line.trim() !== '')
+      const historyLogs = lines.map((line, i) => {
+        let level = 'INFO'
+        if (line.includes('WARN')) level = 'WARN'
+        if (line.includes('ERROR') || line.includes('Exception') || line.includes('Failed')) level = 'ERROR'
+        if (line.startsWith('>')) level = 'INPUT'
+        return {
+          id: Date.now() + i,
+          time: '', // History lines might not have our custom time format unless parsed, keeping blank for simplicity or we can add a generic time
+          level,
+          text: line.trim()
+        }
+      });
+      setLogs(prev => [...prev, ...historyLogs].slice(-250))
+    })
+
     newSocket.on('console-log', (data) => {
-      // Split by newlines just in case
       const lines = data.split('\n').filter(line => line.trim() !== '')
       lines.forEach(line => {
         let level = 'INFO'
         if (line.includes('WARN')) level = 'WARN'
         if (line.includes('ERROR') || line.includes('Exception') || line.includes('Failed')) level = 'ERROR'
+        if (line.startsWith('>')) level = 'INPUT'
         
-        setLogs(prev => [...prev.slice(-150), { // Keep last 150 lines
+        setLogs(prev => [...prev.slice(-250), {
           id: Date.now() + Math.random(),
           time: new Date().toLocaleTimeString('en-US', { hour12: false }),
           level,
@@ -54,7 +71,7 @@ export default function ConsoleTerminal() {
     })
 
     newSocket.on('console-error', (data) => {
-      setLogs(prev => [...prev.slice(-150), {
+      setLogs(prev => [...prev.slice(-250), {
         id: Date.now() + Math.random(),
         time: new Date().toLocaleTimeString('en-US', { hour12: false }),
         level: 'ERROR',

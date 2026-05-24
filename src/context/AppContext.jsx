@@ -78,21 +78,31 @@ export function AppProvider({ children }) {
     return () => clearInterval(interval)
   }, [user])
 
+  // --- Deploy Modal State ---
+  const [showDeployModal, setShowDeployModal] = useState(false)
+
   // --- Actions ---
-  const deployServer = async (name, version) => {
+  const deployServer = async (name, version, region) => {
     try {
-      await fetch(`${API_BASE}/servers/deploy`, {
+      const res = await fetch(`${API_BASE}/servers/deploy`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ 
-          name: name || 'New Vanilla Server', 
+          name: name || 'New SMP Server', 
           versionType: 'Paper', 
-          versionNumber: '1.21.11'
+          versionNumber: version || '1.21.11',
+          region: region || 'ap-south-1'
         })
-      })
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        alert(`Deployment Error: ${errData.error || 'Unknown network error'}`);
+        return;
+      }
       await fetchServers()
     } catch (e) {
       console.error("Deploy failed", e)
+      alert("Deployment network connection failed.");
     }
   }
 
@@ -106,14 +116,19 @@ export function AppProvider({ children }) {
     }))
 
     try {
-      await fetch(`${API_BASE}/servers/${id}/power`, {
+      const res = await fetch(`${API_BASE}/servers/${id}/power`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ action: targetStatus })
-      })
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        alert(`Server Error: ${errData.error || 'Unknown command rejection'}`);
+      }
       await fetchServers()
     } catch (e) {
       console.error("Power action failed", e)
+      alert("Network failed to dispatch server command");
     }
   }
 
@@ -121,6 +136,7 @@ export function AppProvider({ children }) {
     <AppContext.Provider value={{ 
       user, loading, login, logout,
       servers, deployServer, toggleServerStatus,
+      showDeployModal, setShowDeployModal,
       getAuthHeaders, API_BASE
     }}>
       {children}

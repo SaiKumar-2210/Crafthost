@@ -239,18 +239,6 @@ app.post('/api/servers/:id/power', protect, async (req, res) => {
   }
 
   if (action === 'start' || action === 'restart') {
-    // Limit Enforcement: Only 1 concurrently running server per user
-    const activeIds = Object.keys(runningProcesses);
-    for (let rId of activeIds) {
-       const rMetaPath = path.join(SERVERS_DIR, rId, 'crafthost-meta.json');
-       if(fs.existsSync(rMetaPath)) {
-          const rMeta = require(rMetaPath);
-          if(rMeta.ownerId === req.user._id.toString()) {
-              return res.status(403).json({ error: "You can only boot 1 server simultaneously to conserve compute limits." });
-          }
-       }
-    }
-
     if (runningProcesses[id]) {
       runningProcesses[id].kill('SIGINT');
       delete runningProcesses[id];
@@ -450,32 +438,45 @@ app.get('/api/servers/:id/files/download', protect, async (req, res) => {
 // 1. Get Live Players via RCON
 app.get('/api/servers/:id/players', protect, async (req, res) => {
   const { id } = req.params;
-  if (!runningProcesses[id]) return res.json({ players: [] });
 
   const creds = getRconCredentials(id);
-  if (!creds) return res.json({ players: [] });
+  if (!creds) {
+    console.log(`[RCON] No credentials found for server ${id}`);
+    return res.json({ players: [] });
+  }
 
+  // Do not gate purely on runningProcesses[id] here.
+  // In cloud environments (Azure) the Node process may restart while the
+  // Java server survives, or requests may route to a different instance.
+  // We attempt RCON directly and fall back gracefully.
   try {
     const client = new util.RCON();
-    // Use a short timeout so we don't hang the API if server is booting
-    await client.connect('127.0.0.1', creds.port, { timeout: 1000 });
-    await client.login(creds.password);
-    
-    const listRes = await client.run('list');
+    await client.connect('127.0.0.1', creds.port, { timeout: 3000 });
+    await client.login(creds.password, { timeout: 3000 });
+
+    // execute() returns the command output string.
+    // run() only returns the numeric request ID and does not wait for a response.
+    const listRes = await client.execute('list');
     client.close();
 
     let players = [];
-    const match = listRes.match(/players online:\s*(.*)/i);
-    if (match && match[1]) {
-      const namesStr = match[1].replace(/§[0-9a-fk-or]/ig, '').trim(); // Remove color codes
-      if (namesStr !== '') {
-        players = namesStr.split(',').map(p => ({
-          name: p.trim(),
-          ping: Math.floor(Math.random() * 50) + 10
-        }));
+    if (listRes) {
+      const clean = listRes.replace(/§[0-9a-fk-or]/ig, '').trim();
+      // Match text after "online:" to support formats like:
+      // "There are 2 of a max of 20 players online: Steve, Alex"
+      const match = clean.match(/online:\s*(.+)/i);
+      if (match && match[1]) {
+        const namesStr = match[1].trim();
+        // Guard against capturing the prefix text instead of the names
+        if (namesStr && !/^there are/i.test(namesStr)) {
+          players = namesStr.split(',').map(p => ({
+            name: p.trim(),
+            ping: Math.floor(Math.random() * 50) + 10
+          }));
+        }
       }
     }
-    
+
     res.json({ players });
   } catch (err) {
     console.error(`[RCON] Server ${id} player fetch failed:`, err.message);

@@ -114,7 +114,11 @@ export default function PlayerList() {
                   </div>
                 </td>
                 <td>
-                  <span className="role-badge role-player">Player</span>
+                  {player.isOp ? (
+                    <span className="role-badge role-admin" style={{ color: 'var(--accent-primary)', border: '1px solid var(--accent-primary)', padding: '2px 8px', borderRadius: '4px', fontSize: '11px' }}>Operator</span>
+                  ) : (
+                    <span className="role-badge role-player" style={{ color: '#aaa', border: '1px solid #444', padding: '2px 8px', borderRadius: '4px', fontSize: '11px' }}>Player</span>
+                  )}
                 </td>
                 <td>
                   <span className={`ping-text ${parseInt(player.ping) > 100 ? 'ping-high' : 'ping-low'}`}>
@@ -122,6 +126,15 @@ export default function PlayerList() {
                   </span>
                 </td>
                 <td className="player-actions text-right">
+                  {player.isOp ? (
+                    <button className="btn-icon btn-ghost btn-xs text-warning" title="Deop (Remove Admin)" onClick={() => handleAction(player.name, 'deop')}>
+                      <Shield size={14} style={{ fill: 'currentColor' }} />
+                    </button>
+                  ) : (
+                    <button className="btn-icon btn-ghost btn-xs text-primary" title="Op (Make Admin)" onClick={() => handleAction(player.name, 'op')}>
+                      <Shield size={14} />
+                    </button>
+                  )}
                   <button className="btn-icon btn-ghost btn-xs text-warning" title="Kick" onClick={() => handleAction(player.name, 'kick')}>
                     <UserMinus size={14} />
                   </button>

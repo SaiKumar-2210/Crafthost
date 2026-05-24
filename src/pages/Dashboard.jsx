@@ -1,13 +1,13 @@
 import Sidebar from '../components/layout/Sidebar'
 import StatsGrid from '../components/dashboard/StatsGrid'
 import ServerCard from '../components/dashboard/ServerCard'
-import ActivityFeed from '../components/dashboard/ActivityFeed'
-import { Plus, Search, Bell } from 'lucide-react'
+import DeployModal from '../components/dashboard/DeployModal'
+import { Search, Bell } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import './Dashboard.css'
 
 export default function Dashboard() {
-  const { user, servers, deployServer } = useApp()
+  const { user, servers, showDeployModal, setShowDeployModal } = useApp()
 
   return (
     <div className="dashboard-layout">
@@ -25,10 +25,6 @@ export default function Dashboard() {
               <Bell size={20} />
               <span className="notification-dot"></span>
             </button>
-            <button className="btn btn-primary btn-sm" onClick={() => deployServer('New SMP Server', 'Paper 1.21.4')}>
-              <Plus size={16} />
-              <span className="hide-mobile">Deploy Server</span>
-            </button>
           </div>
         </header>
 
@@ -41,7 +37,7 @@ export default function Dashboard() {
 
           <StatsGrid />
 
-          <div className="dashboard-grid">
+          <div className="dashboard-grid" style={{ gridTemplateColumns: '1fr' }}>
             <div className="servers-section">
               <div className="section-header-compact">
                 <h2 className="section-title-sm">Active Servers</h2>
@@ -53,13 +49,10 @@ export default function Dashboard() {
                 ))}
               </div>
             </div>
-
-            <div className="activity-section hide-mobile">
-              <ActivityFeed />
-            </div>
           </div>
         </div>
       </div>
+      {showDeployModal && <DeployModal onClose={() => setShowDeployModal(false)} />}
     </div>
   )
 }

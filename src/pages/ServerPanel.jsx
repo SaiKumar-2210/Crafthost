@@ -96,8 +96,19 @@ export default function ServerPanel() {
                     className="btn-icon btn-ghost btn-xs"
                     onClick={() => {
                       const ipText = server.ip ? (server.port ? `${server.ip}:${server.port}` : server.ip) : '';
-                      if (ipText) navigator.clipboard.writeText(ipText);
-                      alert("Copied IP to clipboard!");
+                      if (ipText) {
+                        if (navigator.clipboard && window.isSecureContext) {
+                          navigator.clipboard.writeText(ipText);
+                        } else {
+                          const textArea = document.createElement("textarea");
+                          textArea.value = ipText;
+                          document.body.appendChild(textArea);
+                          textArea.select();
+                          try { document.execCommand('copy'); } catch (e) {}
+                          document.body.removeChild(textArea);
+                        }
+                        alert("Copied IP to clipboard!");
+                      }
                     }}
                   >
                     <Copy size={12} />
