@@ -502,6 +502,13 @@
   margin: 0;
 }
 
+.regions-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
 /* Scrollbar */
 .region-groups::-webkit-scrollbar {
   width: 6px;

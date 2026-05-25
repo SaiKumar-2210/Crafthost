@@ -92,7 +92,6 @@ const ALL_REGIONS = [
   { value: 'israelcentral', label: 'Israel Central', city: 'Tel Aviv', country: '🇮🇱', group: 'Middle East & Africa' },
   { value: 'qatarcentral', label: 'Qatar Central', city: 'Doha', country: '🇶🇦', group: 'Middle East & Africa' },
   { value: 'southafricanorth', label: 'South Africa North', city: 'Johannesburg', country: '🇿🇦', group: 'Middle East & Africa' },
-  { value: 'southafricawest', label: 'South Africa West', city: 'Cape Town', country: '🇿🇦', group: 'Middle East & Africa' },
 ]
 
 export default function DeployPage() {
@@ -104,10 +103,10 @@ export default function DeployPage() {
   const [azureLocation, setAzureLocation] = useState('eastus')
   const [isDeploying, setIsDeploying] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [allowedRegions, setAllowedRegions] = useState(null)
+  const [regions, setRegions] = useState([])
   const [regionsLoading, setRegionsLoading] = useState(true)
 
-  // Fetch allowed Azure regions on mount
+  // Fetch safe Azure regions from backend on mount
   useEffect(() => {
     const fetchRegions = async () => {
       try {
@@ -116,20 +115,14 @@ export default function DeployPage() {
         })
         const data = await res.json()
         if (data.regions && data.regions.length > 0) {
-          // Create a set of allowed region names for fast lookup
-          const allowedSet = new Set(data.regions.map(r => r.name))
-          setAllowedRegions(allowedSet)
-          // Default to first allowed region
-          const firstAllowed = ALL_REGIONS.find(r => allowedSet.has(r.value))
-          if (firstAllowed) setAzureLocation(firstAllowed.value)
+          setRegions(data.regions)
+          setAzureLocation(data.regions[0].value)
         } else {
-          // Fallback: if Azure not configured, show all
-          setAllowedRegions(new Set(ALL_REGIONS.map(r => r.value)))
+          setRegions([])
         }
       } catch (err) {
         console.error('Failed to fetch Azure regions:', err)
-        // Fallback: show all regions
-        setAllowedRegions(new Set(ALL_REGIONS.map(r => r.value)))
+        setRegions([])
       } finally {
         setRegionsLoading(false)
       }
@@ -138,12 +131,10 @@ export default function DeployPage() {
   }, [API_BASE, getAuthHeaders])
 
   const selectedVersion = versions.find(v => v.id === version)
-  const selectedRegion = ALL_REGIONS.find(r => r.value === azureLocation)
+  const selectedRegion = regions.find(r => r.value === azureLocation)
 
-  // Filter regions by allowed set and search query
-  const visibleRegions = ALL_REGIONS.filter(r => {
-    if (!allowedRegions) return false
-    if (!allowedRegions.has(r.value)) return false
+  // Filter regions by search query
+  const visibleRegions = regions.filter(r => {
     if (!searchQuery) return true
     const q = searchQuery.toLowerCase()
     return r.label.toLowerCase().includes(q) || 
@@ -291,31 +282,37 @@ export default function DeployPage() {
                         className="region-search-input"
                       />
                     </div>
-                    <div className="region-groups">
-                      {regionGroups.map(group => (
-                        <div key={group.group} className="region-group">
-                          <h4 className="region-group-title">{group.group}</h4>
-                          <div className="region-grid">
-                            {group.items.map(r => (
-                              <div
-                                key={r.value}
-                                className={`region-card ${azureLocation === r.value ? 'active' : ''}`}
-                                onClick={() => setAzureLocation(r.value)}
-                              >
-                                <div className="region-flag">{r.country}</div>
-                                <div className="region-info">
-                                  <div className="region-label">{r.label}</div>
-                                  <div className="region-city"><MapPin size={10} /> {r.city}</div>
+                    {regionGroups.length === 0 ? (
+                      <div className="regions-empty">
+                        <p>No regions match your search. Try a different query.</p>
+                      </div>
+                    ) : (
+                      <div className="region-groups">
+                        {regionGroups.map(group => (
+                          <div key={group.group} className="region-group">
+                            <h4 className="region-group-title">{group.group}</h4>
+                            <div className="region-grid">
+                              {group.items.map(r => (
+                                <div
+                                  key={r.value}
+                                  className={`region-card ${azureLocation === r.value ? 'active' : ''}`}
+                                  onClick={() => setAzureLocation(r.value)}
+                                >
+                                  <div className="region-flag">{r.country}</div>
+                                  <div className="region-info">
+                                    <div className="region-label">{r.label}</div>
+                                    <div className="region-city"><MapPin size={10} /> {r.city}</div>
+                                  </div>
+                                  {azureLocation === r.value && (
+                                    <div className="region-check"><Check size={16} /></div>
+                                  )}
                                 </div>
-                                {azureLocation === r.value && (
-                                  <div className="region-check"><Check size={16} /></div>
-                                )}
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </>
                 )}
               </div>

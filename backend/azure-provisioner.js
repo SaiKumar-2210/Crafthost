@@ -14,6 +14,66 @@ const isAzureConfigured = !!(tenantId && clientId && clientSecret && subscriptio
 const DAEMON_SECRET = process.env.DAEMON_SECRET || 'crafthost-internal-node-secret';
 const CONTROL_PLANE_URL = process.env.CONTROL_PLANE_URL || 'http://crafthost.saikumar.co.in';
 
+// Fallback regions for restricted Azure subscriptions (e.g., Azure for Students, MSDN, EA with location policies)
+// Ordered by likelihood of being allowed on restricted subscriptions.
+const FALLBACK_REGIONS = [
+  'eastus',
+  'westus2',
+  'westeurope',
+  'centralus',
+  'northeurope',
+  'eastus2',
+  'uksouth',
+  'canadacentral',
+  'francecentral',
+  'japaneast',
+  'brazilsouth',
+  'australiaeast',
+  'centralindia',
+  'koreacentral',
+  'germanywestcentral',
+  'swedencentral',
+  'norwayeast',
+  'switzerlandnorth',
+  'polandcentral',
+  'italynorth',
+  'spaincentral',
+  'uaenorth',
+  'southafricanorth',
+  'mexicocentral',
+  'israelcentral',
+  'qatarcentral',
+];
+
+const SAFE_REGION_METADATA = [
+  { value: 'eastus', label: 'East US', city: 'Virginia', country: '🇺🇸', group: 'Americas' },
+  { value: 'westus2', label: 'West US 2', city: 'Washington', country: '🇺🇸', group: 'Americas' },
+  { value: 'westeurope', label: 'West Europe', city: 'Amsterdam', country: '🇳🇱', group: 'Europe' },
+  { value: 'centralus', label: 'Central US', city: 'Iowa', country: '🇺🇸', group: 'Americas' },
+  { value: 'northeurope', label: 'North Europe', city: 'Dublin', country: '🇮🇪', group: 'Europe' },
+  { value: 'eastus2', label: 'East US 2', city: 'Virginia', country: '🇺🇸', group: 'Americas' },
+  { value: 'uksouth', label: 'UK South', city: 'London', country: '🇬🇧', group: 'Europe' },
+  { value: 'canadacentral', label: 'Canada Central', city: 'Toronto', country: '🇨🇦', group: 'Americas' },
+  { value: 'francecentral', label: 'France Central', city: 'Paris', country: '🇫🇷', group: 'Europe' },
+  { value: 'japaneast', label: 'Japan East', city: 'Tokyo', country: '🇯🇵', group: 'Asia Pacific' },
+  { value: 'brazilsouth', label: 'Brazil South', city: 'São Paulo', country: '🇧🇷', group: 'Americas' },
+  { value: 'australiaeast', label: 'Australia East', city: 'Sydney', country: '🇦🇺', group: 'Asia Pacific' },
+  { value: 'centralindia', label: 'Central India', city: 'Pune', country: '🇮🇳', group: 'Asia Pacific' },
+  { value: 'koreacentral', label: 'Korea Central', city: 'Seoul', country: '🇰🇷', group: 'Asia Pacific' },
+  { value: 'germanywestcentral', label: 'Germany West Central', city: 'Frankfurt', country: '🇩🇪', group: 'Europe' },
+  { value: 'swedencentral', label: 'Sweden Central', city: 'Gävle', country: '🇸🇪', group: 'Europe' },
+  { value: 'norwayeast', label: 'Norway East', city: 'Oslo', country: '🇳🇴', group: 'Europe' },
+  { value: 'switzerlandnorth', label: 'Switzerland North', city: 'Zurich', country: '🇨🇭', group: 'Europe' },
+  { value: 'polandcentral', label: 'Poland Central', city: 'Warsaw', country: '🇵🇱', group: 'Europe' },
+  { value: 'italynorth', label: 'Italy North', city: 'Milan', country: '🇮🇹', group: 'Europe' },
+  { value: 'spaincentral', label: 'Spain Central', city: 'Madrid', country: '🇪🇸', group: 'Europe' },
+  { value: 'uaenorth', label: 'UAE North', city: 'Dubai', country: '🇦🇪', group: 'Middle East & Africa' },
+  { value: 'southafricanorth', label: 'South Africa North', city: 'Johannesburg', country: '🇿🇦', group: 'Middle East & Africa' },
+  { value: 'mexicocentral', label: 'Mexico Central', city: 'Mexico City', country: '🇲🇽', group: 'Americas' },
+  { value: 'israelcentral', label: 'Israel Central', city: 'Tel Aviv', country: '🇮🇱', group: 'Middle East & Africa' },
+  { value: 'qatarcentral', label: 'Qatar Central', city: 'Doha', country: '🇶🇦', group: 'Middle East & Africa' },
+];
+
 const getAzureClients = () => {
   if (!isAzureConfigured) {
     return null;
@@ -123,6 +183,19 @@ echo "[Cloud-Init] CraftHost Daemon Setup Complete! Daemon should be running on 
   return script;
 }
 
+function isPolicyError(err) {
+  if (!err) return false;
+  const msg = (err.message || '').toLowerCase();
+  const code = (err.code || '').toLowerCase();
+  return msg.includes('disallowed') || 
+         msg.includes('policy') || 
+         msg.includes('not available for subscription') || 
+         msg.includes('invalidresourcelocation') ||
+         msg.includes('location') && msg.includes('not available') ||
+         msg.includes('requestdisallowedbypolicy') ||
+         code === 'requestdisallowedbypolicy';
+}
+
 // --- Core Functions ---
 
 async function doesVMExist(vmName) {
@@ -139,11 +212,11 @@ async function doesVMExist(vmName) {
 }
 
 /**
- * Ensures an Azure VM exists. If it doesn't, creates the full network infrastructure
- * and a Ubuntu 22.04 VM with cloud-init to auto-install the CraftHost daemon.
+ * Provisions all resources for a VM in a specific region.
+ * This is the inner function that gets retried with fallback regions.
  */
-async function ensureAzureVM(vmName, azureLocation) {
-  console.log(`[Azure Provisioner] Ensuring VM ${vmName} exists in ${azureLocation}...`);
+async function _ensureAzureVMInRegion(vmName, azureLocation) {
+  console.log(`[Azure Provisioner] Provisioning VM ${vmName} in ${azureLocation}...`);
 
   const clients = getAzureClients();
   if (!clients) {
@@ -160,9 +233,10 @@ async function ensureAzureVM(vmName, azureLocation) {
   const vnetName = `CraftHost-VNet-${azureLocation}`;
   const subnetName = `CraftHost-Subnet-${azureLocation}`;
   const nsgName = `CraftHost-NSG-${azureLocation}`;
-  const publicIpName = `${vmName}-pip`;
-  const nicName = `${vmName}-nic`;
-  const osDiskName = `${vmName}-osdisk`;
+  // Make per-region resource names so fallback retries don't collide with partial resources
+  const publicIpName = `${vmName}-${azureLocation}-pip`;
+  const nicName = `${vmName}-${azureLocation}-nic`;
+  const osDiskName = `${vmName}-${azureLocation}-osdisk`;
   const adminPassword = generateAdminPassword();
 
   // 1. Ensure Virtual Network
@@ -324,6 +398,39 @@ async function ensureAzureVM(vmName, azureLocation) {
 }
 
 /**
+ * Ensures an Azure VM exists. If it doesn't, creates the full network infrastructure
+ * and a Ubuntu 22.04 VM with cloud-init to auto-install the CraftHost daemon.
+ * If the preferred region is blocked by subscription policy, automatically retries
+ * with a curated list of fallback regions.
+ */
+async function ensureAzureVM(vmName, preferredLocation) {
+  const regionsToTry = [preferredLocation, ...FALLBACK_REGIONS.filter(r => r !== preferredLocation)];
+  let lastError = null;
+
+  for (const azureLocation of regionsToTry) {
+    try {
+      const result = await _ensureAzureVMInRegion(vmName, azureLocation);
+      if (azureLocation !== preferredLocation) {
+        console.log(`[Azure Provisioner] ⚠️  Used fallback region ${azureLocation} instead of preferred ${preferredLocation}.`);
+      }
+      return { success: result, actualLocation: azureLocation };
+    } catch (err) {
+      lastError = err;
+      if (isPolicyError(err)) {
+        console.warn(`[Azure Provisioner] Region ${azureLocation} blocked by Azure policy. Trying next fallback...`);
+        continue;
+      }
+      // Non-policy error — don't retry, just fail fast
+      throw err;
+    }
+  }
+
+  throw new Error(
+    `All Azure regions blocked by subscription policy. Last error: ${lastError?.message || 'Unknown'}`
+  );
+}
+
+/**
  * Starts an Azure VM.
  * @param {string} vmName
  */
@@ -452,5 +559,7 @@ module.exports = {
   deallocateAzureVM,
   getVMPublicIP,
   getVMStatus,
-  doesVMExist
+  doesVMExist,
+  SAFE_REGION_METADATA,
+  FALLBACK_REGIONS
 };

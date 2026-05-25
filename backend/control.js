@@ -15,7 +15,8 @@ const {
   deallocateAzureVM,
   getVMPublicIP,
   getVMStatus,
-  doesVMExist
+  doesVMExist,
+  SAFE_REGION_METADATA
 } = require('./azure-provisioner');
 
 const app = express();
@@ -256,7 +257,11 @@ app.post('/api/servers/deploy', protect, checkLimits, async (req, res) => {
       const vmExists = await doesVMExist(vmName);
       if (!vmExists) {
         console.log(`[Azure Orchestrator] VM ${vmName} does not exist in Azure. Provisioning infrastructure in ${azureLocation}...`);
-        await ensureAzureVM(vmName, azureLocation);
+        const provisionResult = await ensureAzureVM(vmName, azureLocation);
+        if (provisionResult.actualLocation !== azureLocation) {
+          console.log(`[Azure Orchestrator] Fallback region used: ${provisionResult.actualLocation} (requested: ${azureLocation})`);
+          vmNode.region = provisionResult.actualLocation;
+        }
 
         vmNode.status = 'starting';
         await vmNode.save();
@@ -370,7 +375,11 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
       if (!vmExists) {
         // VM doesn't exist in Azure yet — provision from scratch
         console.log(`[Azure Orchestrator] Server start requested but VM ${vmName} does not exist. Provisioning in ${azureLocation}...`);
-        await ensureAzureVM(vmName, azureLocation);
+        const provisionResult = await ensureAzureVM(vmName, azureLocation);
+        if (provisionResult.actualLocation !== azureLocation) {
+          console.log(`[Azure Orchestrator] Fallback region used: ${provisionResult.actualLocation} (requested: ${azureLocation})`);
+          vmNode.region = provisionResult.actualLocation;
+        }
 
         vmNode.status = 'starting';
         await vmNode.save();
@@ -718,31 +727,13 @@ app.get('/api/system/daemon-package', requireSystemSecret, (req, res) => {
 });
 
 // --- AZURE REGION DISCOVERY ---
-// Returns the list of Azure regions actually available for this subscription
+// Returns a curated list of regions known to work on restricted Azure subscriptions.
+// The backend will auto-fallback if the chosen region is blocked by policy.
 app.get('/api/system/azure-regions', protect, async (req, res) => {
   if (!isAzureConfigured) {
     return res.json({ regions: [] });
   }
-  try {
-    const { SubscriptionClient } = require('@azure/arm-subscriptions');
-    const { ClientSecretCredential } = require('@azure/identity');
-    const credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
-    const subClient = new SubscriptionClient(credential);
-    const locations = [];
-    for await (const loc of subClient.subscriptions.listLocations(subscriptionId)) {
-      if (loc.name && !loc.name.includes('stage') && !loc.name.includes('stg') && !loc.name.includes('euap')) {
-        locations.push({
-          name: loc.name,
-          displayName: loc.displayName,
-          regionalDisplayName: loc.regionalDisplayName
-        });
-      }
-    }
-    res.json({ regions: locations });
-  } catch (err) {
-    console.error('[Azure Regions] Failed to fetch locations:', err.message);
-    res.status(500).json({ error: 'Failed to fetch Azure regions: ' + err.message });
-  }
+  res.json({ regions: SAFE_REGION_METADATA });
 });
 
 // --- BACKGROUND IDLE VM COST-SAVING CHECK ---
