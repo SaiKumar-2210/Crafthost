@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../components/layout/Sidebar'
 import { useApp } from '../context/AppContext'
 import { 
   Globe2, Cpu, Server, ChevronRight, ChevronLeft, 
-  MapPin, Sparkles, Shield, HardDrive, Zap, Check
+  MapPin, Sparkles, Shield, Zap, Check, Loader2
 } from 'lucide-react'
 import './DeployPage.css'
 
@@ -35,91 +35,129 @@ const versions = [
   }
 ]
 
-const regionGroups = [
-  {
-    group: 'Americas',
-    items: [
-      { value: 'eastus', label: 'East US', city: 'Virginia', country: '🇺🇸', flag: 'us' },
-      { value: 'eastus2', label: 'East US 2', city: 'Virginia', country: '🇺🇸', flag: 'us' },
-      { value: 'westus2', label: 'West US 2', city: 'Washington', country: '🇺🇸', flag: 'us' },
-      { value: 'westus3', label: 'West US 3', city: 'Arizona', country: '🇺🇸', flag: 'us' },
-      { value: 'centralus', label: 'Central US', city: 'Iowa', country: '🇺🇸', flag: 'us' },
-      { value: 'southcentralus', label: 'South Central US', city: 'Texas', country: '🇺🇸', flag: 'us' },
-      { value: 'canadacentral', label: 'Canada Central', city: 'Toronto', country: '🇨🇦', flag: 'ca' },
-      { value: 'brazilsouth', label: 'Brazil South', city: 'São Paulo', country: '🇧🇷', flag: 'br' },
-      { value: 'mexicocentral', label: 'Mexico Central', city: 'Mexico City', country: '🇲🇽', flag: 'mx' },
-      { value: 'chilecentral', label: 'Chile Central', city: 'Santiago', country: '🇨🇱', flag: 'cl' },
-    ]
-  },
-  {
-    group: 'Europe',
-    items: [
-      { value: 'northeurope', label: 'North Europe', city: 'Dublin', country: '🇮🇪', flag: 'ie' },
-      { value: 'westeurope', label: 'West Europe', city: 'Amsterdam', country: '🇳🇱', flag: 'nl' },
-      { value: 'uksouth', label: 'UK South', city: 'London', country: '🇬🇧', flag: 'gb' },
-      { value: 'francecentral', label: 'France Central', city: 'Paris', country: '🇫🇷', flag: 'fr' },
-      { value: 'germanywestcentral', label: 'Germany West Central', city: 'Frankfurt', country: '🇩🇪', flag: 'de' },
-      { value: 'swedencentral', label: 'Sweden Central', city: 'Gävle', country: '🇸🇪', flag: 'se' },
-      { value: 'norwayeast', label: 'Norway East', city: 'Oslo', country: '🇳🇴', flag: 'no' },
-      { value: 'switzerlandnorth', label: 'Switzerland North', city: 'Zurich', country: '🇨🇭', flag: 'ch' },
-      { value: 'italynorth', label: 'Italy North', city: 'Milan', country: '🇮🇹', flag: 'it' },
-      { value: 'spaincentral', label: 'Spain Central', city: 'Madrid', country: '🇪🇸', flag: 'es' },
-      { value: 'polandcentral', label: 'Poland Central', city: 'Warsaw', country: '🇵🇱', flag: 'pl' },
-      { value: 'austriaeast', label: 'Austria East', city: 'Vienna', country: '🇦🇹', flag: 'at' },
-    ]
-  },
-  {
-    group: 'Asia Pacific',
-    items: [
-      { value: 'southeastasia', label: 'Southeast Asia', city: 'Singapore', country: '🇸🇬', flag: 'sg' },
-      { value: 'eastasia', label: 'East Asia', city: 'Hong Kong', country: '🇭🇰', flag: 'hk' },
-      { value: 'japaneast', label: 'Japan East', city: 'Tokyo', country: '🇯🇵', flag: 'jp' },
-      { value: 'japanwest', label: 'Japan West', city: 'Osaka', country: '🇯🇵', flag: 'jp' },
-      { value: 'koreacentral', label: 'Korea Central', city: 'Seoul', country: '🇰🇷', flag: 'kr' },
-      { value: 'centralindia', label: 'Central India', city: 'Pune', country: '🇮🇳', flag: 'in' },
-      { value: 'westindia', label: 'West India', city: 'Mumbai', country: '🇮🇳', flag: 'in' },
-      { value: 'southindia', label: 'South India', city: 'Chennai', country: '🇮🇳', flag: 'in' },
-      { value: 'australiaeast', label: 'Australia East', city: 'Sydney', country: '🇦🇺', flag: 'au' },
-      { value: 'australiasoutheast', label: 'Australia Southeast', city: 'Melbourne', country: '🇦🇺', flag: 'au' },
-      { value: 'newzealandnorth', label: 'New Zealand North', city: 'Auckland', country: '🇳🇿', flag: 'nz' },
-      { value: 'indonesiacentral', label: 'Indonesia Central', city: 'Jakarta', country: '🇮🇩', flag: 'id' },
-      { value: 'malaysiawest', label: 'Malaysia West', city: 'Kuala Lumpur', country: '🇲🇾', flag: 'my' },
-    ]
-  },
-  {
-    group: 'Middle East & Africa',
-    items: [
-      { value: 'uaenorth', label: 'UAE North', city: 'Dubai', country: '🇦🇪', flag: 'ae' },
-      { value: 'israelcentral', label: 'Israel Central', city: 'Tel Aviv', country: '🇮🇱', flag: 'il' },
-      { value: 'qatarcentral', label: 'Qatar Central', city: 'Doha', country: '🇶🇦', flag: 'qa' },
-      { value: 'southafricanorth', label: 'South Africa North', city: 'Johannesburg', country: '🇿🇦', flag: 'za' },
-    ]
-  }
+// Full region catalog with metadata
+const ALL_REGIONS = [
+  { value: 'eastus', label: 'East US', city: 'Virginia', country: '🇺🇸', group: 'Americas' },
+  { value: 'eastus2', label: 'East US 2', city: 'Virginia', country: '🇺🇸', group: 'Americas' },
+  { value: 'westus2', label: 'West US 2', city: 'Washington', country: '🇺🇸', group: 'Americas' },
+  { value: 'westus3', label: 'West US 3', city: 'Arizona', country: '🇺🇸', group: 'Americas' },
+  { value: 'centralus', label: 'Central US', city: 'Iowa', country: '🇺🇸', group: 'Americas' },
+  { value: 'southcentralus', label: 'South Central US', city: 'Texas', country: '🇺🇸', group: 'Americas' },
+  { value: 'northcentralus', label: 'North Central US', city: 'Illinois', country: '🇺🇸', group: 'Americas' },
+  { value: 'westus', label: 'West US', city: 'California', country: '🇺🇸', group: 'Americas' },
+  { value: 'canadacentral', label: 'Canada Central', city: 'Toronto', country: '🇨🇦', group: 'Americas' },
+  { value: 'canadaeast', label: 'Canada East', city: 'Quebec', country: '🇨🇦', group: 'Americas' },
+  { value: 'brazilsouth', label: 'Brazil South', city: 'São Paulo', country: '🇧🇷', group: 'Americas' },
+  { value: 'brazilsoutheast', label: 'Brazil Southeast', city: 'Rio de Janeiro', country: '🇧🇷', group: 'Americas' },
+  { value: 'chilecentral', label: 'Chile Central', city: 'Santiago', country: '🇨🇱', group: 'Americas' },
+  { value: 'mexicocentral', label: 'Mexico Central', city: 'Mexico City', country: '🇲🇽', group: 'Americas' },
+  { value: 'northeurope', label: 'North Europe', city: 'Dublin', country: '🇮🇪', group: 'Europe' },
+  { value: 'westeurope', label: 'West Europe', city: 'Amsterdam', country: '🇳🇱', group: 'Europe' },
+  { value: 'uksouth', label: 'UK South', city: 'London', country: '🇬🇧', group: 'Europe' },
+  { value: 'ukwest', label: 'UK West', city: 'Cardiff', country: '🇬🇧', group: 'Europe' },
+  { value: 'francecentral', label: 'France Central', city: 'Paris', country: '🇫🇷', group: 'Europe' },
+  { value: 'francesouth', label: 'France South', city: 'Marseille', country: '🇫🇷', group: 'Europe' },
+  { value: 'germanywestcentral', label: 'Germany West Central', city: 'Frankfurt', country: '🇩🇪', group: 'Europe' },
+  { value: 'germanynorth', label: 'Germany North', city: 'Berlin', country: '🇩🇪', group: 'Europe' },
+  { value: 'swedencentral', label: 'Sweden Central', city: 'Gävle', country: '🇸🇪', group: 'Europe' },
+  { value: 'norwayeast', label: 'Norway East', city: 'Oslo', country: '🇳🇴', group: 'Europe' },
+  { value: 'norwaywest', label: 'Norway West', city: 'Stavanger', country: '🇳🇴', group: 'Europe' },
+  { value: 'switzerlandnorth', label: 'Switzerland North', city: 'Zurich', country: '🇨🇭', group: 'Europe' },
+  { value: 'switzerlandwest', label: 'Switzerland West', city: 'Geneva', country: '🇨🇭', group: 'Europe' },
+  { value: 'italynorth', label: 'Italy North', city: 'Milan', country: '🇮🇹', group: 'Europe' },
+  { value: 'spaincentral', label: 'Spain Central', city: 'Madrid', country: '🇪🇸', group: 'Europe' },
+  { value: 'polandcentral', label: 'Poland Central', city: 'Warsaw', country: '🇵🇱', group: 'Europe' },
+  { value: 'austriaeast', label: 'Austria East', city: 'Vienna', country: '🇦🇹', group: 'Europe' },
+  { value: 'belgiumcentral', label: 'Belgium Central', city: 'Brussels', country: '🇧🇪', group: 'Europe' },
+  { value: 'denmarkeast', label: 'Denmark East', city: 'Copenhagen', country: '🇩🇰', group: 'Europe' },
+  { value: 'southeastasia', label: 'Southeast Asia', city: 'Singapore', country: '🇸🇬', group: 'Asia Pacific' },
+  { value: 'eastasia', label: 'East Asia', city: 'Hong Kong', country: '🇭🇰', group: 'Asia Pacific' },
+  { value: 'japaneast', label: 'Japan East', city: 'Tokyo', country: '🇯🇵', group: 'Asia Pacific' },
+  { value: 'japanwest', label: 'Japan West', city: 'Osaka', country: '🇯🇵', group: 'Asia Pacific' },
+  { value: 'koreacentral', label: 'Korea Central', city: 'Seoul', country: '🇰🇷', group: 'Asia Pacific' },
+  { value: 'koreasouth', label: 'Korea South', city: 'Busan', country: '🇰🇷', group: 'Asia Pacific' },
+  { value: 'centralindia', label: 'Central India', city: 'Pune', country: '🇮🇳', group: 'Asia Pacific' },
+  { value: 'westindia', label: 'West India', city: 'Mumbai', country: '🇮🇳', group: 'Asia Pacific' },
+  { value: 'southindia', label: 'South India', city: 'Chennai', country: '🇮🇳', group: 'Asia Pacific' },
+  { value: 'jioindiawest', label: 'Jio India West', city: 'Jamnagar', country: '🇮🇳', group: 'Asia Pacific' },
+  { value: 'jioindiacentral', label: 'Jio India Central', city: 'Nagpur', country: '🇮🇳', group: 'Asia Pacific' },
+  { value: 'australiaeast', label: 'Australia East', city: 'Sydney', country: '🇦🇺', group: 'Asia Pacific' },
+  { value: 'australiasoutheast', label: 'Australia Southeast', city: 'Melbourne', country: '🇦🇺', group: 'Asia Pacific' },
+  { value: 'australiacentral', label: 'Australia Central', city: 'Canberra', country: '🇦🇺', group: 'Asia Pacific' },
+  { value: 'newzealandnorth', label: 'New Zealand North', city: 'Auckland', country: '🇳🇿', group: 'Asia Pacific' },
+  { value: 'indonesiacentral', label: 'Indonesia Central', city: 'Jakarta', country: '🇮🇩', group: 'Asia Pacific' },
+  { value: 'malaysiawest', label: 'Malaysia West', city: 'Kuala Lumpur', country: '🇲🇾', group: 'Asia Pacific' },
+  { value: 'uaenorth', label: 'UAE North', city: 'Dubai', country: '🇦🇪', group: 'Middle East & Africa' },
+  { value: 'uaecentral', label: 'UAE Central', city: 'Abu Dhabi', country: '🇦🇪', group: 'Middle East & Africa' },
+  { value: 'israelcentral', label: 'Israel Central', city: 'Tel Aviv', country: '🇮🇱', group: 'Middle East & Africa' },
+  { value: 'qatarcentral', label: 'Qatar Central', city: 'Doha', country: '🇶🇦', group: 'Middle East & Africa' },
+  { value: 'southafricanorth', label: 'South Africa North', city: 'Johannesburg', country: '🇿🇦', group: 'Middle East & Africa' },
+  { value: 'southafricawest', label: 'South Africa West', city: 'Cape Town', country: '🇿🇦', group: 'Middle East & Africa' },
 ]
 
 export default function DeployPage() {
   const navigate = useNavigate()
-  const { deployServer } = useApp()
+  const { deployServer, getAuthHeaders, API_BASE } = useApp()
   const [step, setStep] = useState(1)
   const [serverName, setServerName] = useState('')
   const [version, setVersion] = useState('1.21.11')
   const [azureLocation, setAzureLocation] = useState('eastus')
   const [isDeploying, setIsDeploying] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [allowedRegions, setAllowedRegions] = useState(null)
+  const [regionsLoading, setRegionsLoading] = useState(true)
+
+  // Fetch allowed Azure regions on mount
+  useEffect(() => {
+    const fetchRegions = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/system/azure-regions`, {
+          headers: getAuthHeaders()
+        })
+        const data = await res.json()
+        if (data.regions && data.regions.length > 0) {
+          // Create a set of allowed region names for fast lookup
+          const allowedSet = new Set(data.regions.map(r => r.name))
+          setAllowedRegions(allowedSet)
+          // Default to first allowed region
+          const firstAllowed = ALL_REGIONS.find(r => allowedSet.has(r.value))
+          if (firstAllowed) setAzureLocation(firstAllowed.value)
+        } else {
+          // Fallback: if Azure not configured, show all
+          setAllowedRegions(new Set(ALL_REGIONS.map(r => r.value)))
+        }
+      } catch (err) {
+        console.error('Failed to fetch Azure regions:', err)
+        // Fallback: show all regions
+        setAllowedRegions(new Set(ALL_REGIONS.map(r => r.value)))
+      } finally {
+        setRegionsLoading(false)
+      }
+    }
+    fetchRegions()
+  }, [API_BASE, getAuthHeaders])
 
   const selectedVersion = versions.find(v => v.id === version)
-  const selectedRegion = regionGroups.flatMap(g => g.items).find(r => r.value === azureLocation)
+  const selectedRegion = ALL_REGIONS.find(r => r.value === azureLocation)
 
-  const filteredGroups = searchQuery 
-    ? regionGroups.map(g => ({
-        ...g,
-        items: g.items.filter(r => 
-          r.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          r.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          r.country.includes(searchQuery)
-        )
-      })).filter(g => g.items.length > 0)
-    : regionGroups
+  // Filter regions by allowed set and search query
+  const visibleRegions = ALL_REGIONS.filter(r => {
+    if (!allowedRegions) return false
+    if (!allowedRegions.has(r.value)) return false
+    if (!searchQuery) return true
+    const q = searchQuery.toLowerCase()
+    return r.label.toLowerCase().includes(q) || 
+           r.city.toLowerCase().includes(q) ||
+           r.country.includes(q)
+  })
+
+  // Group visible regions
+  const regionGroups = ['Americas', 'Europe', 'Asia Pacific', 'Middle East & Africa']
+    .map(group => ({
+      group,
+      items: visibleRegions.filter(r => r.group === group)
+    }))
+    .filter(g => g.items.length > 0)
 
   const handleDeploy = async () => {
     setIsDeploying(true)
@@ -236,40 +274,50 @@ export default function DeployPage() {
                   <h1>Select Azure Region</h1>
                   <p>Deploy your VM exactly where your players are located.</p>
                 </div>
-                <div className="region-search">
-                  <input
-                    type="text"
-                    placeholder="Search regions (e.g. 'Tokyo', 'Europe', 'US')..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="region-search-input"
-                  />
-                </div>
-                <div className="region-groups">
-                  {filteredGroups.map(group => (
-                    <div key={group.group} className="region-group">
-                      <h4 className="region-group-title">{group.group}</h4>
-                      <div className="region-grid">
-                        {group.items.map(r => (
-                          <div
-                            key={r.value}
-                            className={`region-card ${azureLocation === r.value ? 'active' : ''}`}
-                            onClick={() => setAzureLocation(r.value)}
-                          >
-                            <div className="region-flag">{r.country}</div>
-                            <div className="region-info">
-                              <div className="region-label">{r.label}</div>
-                              <div className="region-city"><MapPin size={10} /> {r.city}</div>
-                            </div>
-                            {azureLocation === r.value && (
-                              <div className="region-check"><Check size={16} /></div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+
+                {regionsLoading ? (
+                  <div className="regions-loading">
+                    <Loader2 size={32} className="spin" />
+                    <p>Fetching available Azure regions for your subscription...</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="region-search">
+                      <input
+                        type="text"
+                        placeholder="Search regions (e.g. 'Tokyo', 'Europe', 'US')..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="region-search-input"
+                      />
                     </div>
-                  ))}
-                </div>
+                    <div className="region-groups">
+                      {regionGroups.map(group => (
+                        <div key={group.group} className="region-group">
+                          <h4 className="region-group-title">{group.group}</h4>
+                          <div className="region-grid">
+                            {group.items.map(r => (
+                              <div
+                                key={r.value}
+                                className={`region-card ${azureLocation === r.value ? 'active' : ''}`}
+                                onClick={() => setAzureLocation(r.value)}
+                              >
+                                <div className="region-flag">{r.country}</div>
+                                <div className="region-info">
+                                  <div className="region-label">{r.label}</div>
+                                  <div className="region-city"><MapPin size={10} /> {r.city}</div>
+                                </div>
+                                {azureLocation === r.value && (
+                                  <div className="region-check"><Check size={16} /></div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -294,7 +342,7 @@ export default function DeployPage() {
                 <button 
                   className="btn btn-primary btn-large" 
                   onClick={handleDeploy}
-                  disabled={isDeploying}
+                  disabled={isDeploying || regionsLoading}
                 >
                   {isDeploying ? (
                     <span className="deploying-spinner">Deploying to {selectedRegion?.label}...</span>
@@ -305,7 +353,7 @@ export default function DeployPage() {
               )}
             </div>
             
-            {step === 3 && (
+            {step === 3 && !regionsLoading && (
               <div className="deploy-summary">
                 <div className="summary-item">
                   <Server size={14} /> {serverName || 'CraftHost SMP Server'}

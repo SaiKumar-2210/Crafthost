@@ -717,8 +717,36 @@ app.get('/api/system/daemon-package', requireSystemSecret, (req, res) => {
   res.send(fs.readFileSync(pkgPath, 'utf8'));
 });
 
+// --- AZURE REGION DISCOVERY ---
+// Returns the list of Azure regions actually available for this subscription
+app.get('/api/system/azure-regions', protect, async (req, res) => {
+  if (!isAzureConfigured) {
+    return res.json({ regions: [] });
+  }
+  try {
+    const { SubscriptionClient } = require('@azure/arm-subscriptions');
+    const { ClientSecretCredential } = require('@azure/identity');
+    const credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
+    const subClient = new SubscriptionClient(credential);
+    const locations = [];
+    for await (const loc of subClient.subscriptions.listLocations(subscriptionId)) {
+      if (loc.name && !loc.name.includes('stage') && !loc.name.includes('stg') && !loc.name.includes('euap')) {
+        locations.push({
+          name: loc.name,
+          displayName: loc.displayName,
+          regionalDisplayName: loc.regionalDisplayName
+        });
+      }
+    }
+    res.json({ regions: locations });
+  } catch (err) {
+    console.error('[Azure Regions] Failed to fetch locations:', err.message);
+    res.status(500).json({ error: 'Failed to fetch Azure regions: ' + err.message });
+  }
+});
+
 // --- BACKGROUND IDLE VM COST-SAVING CHECK ---
-// Every 5 minutes, query all running VM nodes. If a node reports 0 active servers
+// Every 5 minutes, query all running VM nodes. If a node reports 0 active running servers
 // via its daemon, deallocate it to stop Azure billing for compute hours.
 const IDLE_CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 setInterval(async () => {
