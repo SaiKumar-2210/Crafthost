@@ -82,7 +82,7 @@ export function AppProvider({ children }) {
   const [showDeployModal, setShowDeployModal] = useState(false)
 
   // --- Actions ---
-  const deployServer = async (name, version, region) => {
+  const deployServer = async (name, version, azureLocation) => {
     try {
       const res = await fetch(`${API_BASE}/servers/deploy`, {
         method: 'POST',
@@ -91,7 +91,7 @@ export function AppProvider({ children }) {
           name: name || 'New SMP Server', 
           versionType: 'Paper', 
           versionNumber: version || '1.21.11',
-          region: region || 'ap-south-1'
+          azureLocation: azureLocation || 'eastus'
         })
       });
       if (!res.ok) {

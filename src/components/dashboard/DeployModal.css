@@ -184,3 +184,134 @@
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
+
+/* Location Dropdown */
+.location-dropdown {
+  position: relative;
+}
+
+.location-dropdown-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--text-color);
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.location-dropdown-trigger:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--primary-color);
+}
+
+.location-selected {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.location-flag {
+  font-size: 1.4rem;
+}
+
+.location-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.location-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-color);
+}
+
+.location-city {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dropdown-chevron {
+  transition: transform 0.2s;
+  color: var(--text-muted);
+}
+
+.dropdown-chevron.open {
+  transform: rotate(180deg);
+}
+
+.location-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--surface-light);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 16px 32px rgba(0,0,0,0.4);
+  z-index: 100;
+  padding: 8px 0;
+}
+
+.location-group {
+  margin-bottom: 4px;
+}
+
+.location-group-header {
+  padding: 8px 16px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  background: rgba(255,255,255,0.02);
+}
+
+.location-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.location-option:hover {
+  background: rgba(79, 70, 229, 0.08);
+}
+
+.location-option.active {
+  background: rgba(79, 70, 229, 0.12);
+}
+
+.location-check {
+  margin-left: auto;
+  color: var(--primary-color);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+/* Scrollbar for dropdown */
+.location-dropdown-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.location-dropdown-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.location-dropdown-menu::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}

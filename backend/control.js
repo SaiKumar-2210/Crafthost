@@ -26,55 +26,6 @@ app.use(express.json());
 connectDB();
 app.use('/api/auth', authRouter);
 
-// Initialize the VM Nodes in Database on startup
-async function initVMNodes() {
-  const defaultNodes = [
-    { vmName: 'crafthost-vm-mumbai', ip: '127.0.0.1', region: 'ap-south-1', status: 'running' },
-    { vmName: 'crafthost-vm-virginia', ip: '127.0.0.1', region: 'us-east-1', status: 'deallocated' },
-    { vmName: 'crafthost-vm-oregon', ip: '127.0.0.1', region: 'us-west-2', status: 'deallocated' },
-    { vmName: 'crafthost-vm-frankfurt', ip: '127.0.0.1', region: 'eu-central-1', status: 'deallocated' },
-    { vmName: 'crafthost-vm-ireland', ip: '127.0.0.1', region: 'eu-west-1', status: 'deallocated' },
-    { vmName: 'crafthost-vm-singapore', ip: '127.0.0.1', region: 'ap-southeast-1', status: 'deallocated' },
-    { vmName: 'crafthost-vm-tokyo', ip: '127.0.0.1', region: 'ap-northeast-1', status: 'deallocated' },
-    { vmName: 'crafthost-vm-sydney', ip: '127.0.0.1', region: 'au-southeast-2', status: 'deallocated' },
-    { vmName: 'crafthost-vm-saopaulo', ip: '127.0.0.1', region: 'sa-east-1', status: 'deallocated' }
-  ];
-
-  for (const node of defaultNodes) {
-    try {
-      let vmNode = await VMNode.findOne({ vmName: node.vmName });
-      if (!vmNode) {
-        // Create fresh document with all required fields
-        vmNode = new VMNode(node);
-        await vmNode.save();
-        console.log(`[Init] Created VMNode ${node.vmName}`);
-      } else if (!vmNode.ip) {
-        // Fix any legacy/corrupt documents missing the required ip field
-        vmNode.ip = node.ip;
-        await vmNode.save();
-        console.log(`[Init] Repaired missing ip for VMNode ${node.vmName}`);
-      }
-    } catch (e) {
-      console.error(`Error initializing VMNode ${node.vmName}:`, e.message);
-    }
-  }
-}
-initVMNodes();
-
-// --- NODE REGISTRY ---
-// azureLocation must be a valid Azure region name (e.g. eastus, westindia)
-const NODES = {
-  'ap-south-1': { vmName: 'crafthost-vm-mumbai', region: 'Asia Pacific (Mumbai)', azureLocation: 'westindia' },
-  'us-east-1': { vmName: 'crafthost-vm-virginia', region: 'US East (N. Virginia)', azureLocation: 'eastus' },
-  'us-west-2': { vmName: 'crafthost-vm-oregon', region: 'US West (Oregon)', azureLocation: 'westus2' },
-  'eu-central-1': { vmName: 'crafthost-vm-frankfurt', region: 'Europe (Frankfurt)', azureLocation: 'germanywestcentral' },
-  'eu-west-1': { vmName: 'crafthost-vm-ireland', region: 'Europe (Ireland)', azureLocation: 'northeurope' },
-  'ap-southeast-1': { vmName: 'crafthost-vm-singapore', region: 'Asia Pacific (Singapore)', azureLocation: 'southeastasia' },
-  'ap-northeast-1': { vmName: 'crafthost-vm-tokyo', region: 'Asia Pacific (Tokyo)', azureLocation: 'japaneast' },
-  'au-southeast-2': { vmName: 'crafthost-vm-sydney', region: 'Australia (Sydney)', azureLocation: 'australiaeast' },
-  'sa-east-1': { vmName: 'crafthost-vm-saopaulo', region: 'South America (São Paulo)', azureLocation: 'brazilsouth' }
-};
-
 const DAEMON_SECRET = process.env.DAEMON_SECRET || 'crafthost-internal-node-secret';
 
 // Middleware for system-level endpoints (daemon downloads, etc.)
@@ -84,21 +35,36 @@ const requireSystemSecret = (req, res, next) => {
   next();
 };
 
-// Helper to resolve daemon URL based on VMNode dynamic IP
-const getNodeUrlByRegion = async (region) => {
-  if (!isAzureConfigured) {
+// Legacy mapping for old servers that stored friendly node names
+const LEGACY_NODE_MAP = {
+  'Asia Pacific (Mumbai)': 'westindia',
+  'US East (N. Virginia)': 'eastus',
+  'US West (Oregon)': 'westus2',
+  'Europe (Frankfurt)': 'germanywestcentral',
+  'Europe (Ireland)': 'northeurope',
+  'Asia Pacific (Singapore)': 'southeastasia',
+  'Asia Pacific (Tokyo)': 'japaneast',
+  'Australia (Sydney)': 'australiaeast',
+  'South America (São Paulo)': 'brazilsouth',
+  'Local Windows Node': 'eastus'
+};
+
+// Derive a safe VM name from an Azure location
+const getVMName = (azureLocation) => 'crafthost-vm-' + azureLocation.replace(/[^a-z0-9]/gi, '');
+
+// Helper to resolve daemon URL based on Azure location
+const getNodeUrlByLocation = async (azureLocation) => {
+  if (!isAzureConfigured || !azureLocation) {
     return 'http://localhost:4000';
   }
-  const registryNode = NODES[region];
-  if (!registryNode) return 'http://localhost:4000';
-
+  const vmName = getVMName(azureLocation);
   try {
-    const vmNode = await VMNode.findOne({ vmName: registryNode.vmName });
+    const vmNode = await VMNode.findOne({ vmName });
     if (vmNode && vmNode.ip && vmNode.status === 'running') {
       return `http://${vmNode.ip}:4000`;
     }
   } catch (err) {
-    console.error(`Error getting dynamic node URL for region ${region}:`, err.message);
+    console.error(`Error getting dynamic node URL for ${azureLocation}:`, err.message);
   }
   return 'http://localhost:4000';
 };
@@ -109,15 +75,11 @@ const getNodeUrlByServerId = async (serverId) => {
   if (fs.existsSync(metaPath)) {
     try {
       const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-      // Find region from meta or map friendly node name back to region
-      let region = 'ap-south-1';
-      for (const regCode of Object.keys(NODES)) {
-        if (NODES[regCode].region === meta.node || regCode === meta.region) {
-          region = regCode;
-          break;
-        }
+      let azureLocation = meta.azureLocation;
+      if (!azureLocation && meta.node) {
+        azureLocation = LEGACY_NODE_MAP[meta.node];
       }
-      return await getNodeUrlByRegion(region);
+      return await getNodeUrlByLocation(azureLocation || 'eastus');
     } catch (e) {
       // ignore
     }
@@ -200,19 +162,17 @@ app.get('/api/servers', protect, async (req, res) => {
       
       if (!isOwner && !isShared) continue;
 
-      // Identify region
-      let region = 'ap-south-1';
-      for (const regCode of Object.keys(NODES)) {
-        if (NODES[regCode].region === meta.node) {
-          region = regCode;
-          break;
-        }
+      // Identify azure location
+      let azureLocation = meta.azureLocation;
+      if (!azureLocation && meta.node) {
+        azureLocation = LEGACY_NODE_MAP[meta.node] || 'eastus';
       }
+      if (!azureLocation) azureLocation = 'eastus';
 
       // Fetch running servers list from region daemon
       let runningServers = [];
       let serverUptimes = {};
-      const nodeUrl = await getNodeUrlByRegion(region);
+      const nodeUrl = await getNodeUrlByLocation(azureLocation);
 
       if (nodeStatusCache[nodeUrl] === undefined) {
         try {
@@ -259,8 +219,9 @@ app.get('/api/servers', protect, async (req, res) => {
 });
 
 // 2. Deploy Server (Orchestration with Azure scaling VM boot)
+// Accepts azureLocation directly from frontend (e.g. 'eastus', 'westindia')
 app.post('/api/servers/deploy', protect, checkLimits, async (req, res) => {
-  const { name, region = 'ap-south-1', versionType = 'Paper', versionNumber = '1.21.11' } = req.body;
+  const { name, azureLocation = 'eastus', versionType = 'Paper', versionNumber = '1.21.11' } = req.body;
   
   // Enforce Max Servers Limit
   const fs = require('fs');
@@ -280,23 +241,22 @@ app.post('/api/servers/deploy', protect, checkLimits, async (req, res) => {
      return res.status(403).json({ error: `Billing Plan Limit: Max ${req.limits.maxServers} servers allowed.` });
   }
 
-  const registryNode = NODES[region];
-  if (!registryNode) return res.status(400).json({ error: 'Invalid Region Selected' });
+  const vmName = getVMName(azureLocation);
 
   try {
     // 1. Resolve VMNode in Database
-    let vmNode = await VMNode.findOne({ vmName: registryNode.vmName });
+    let vmNode = await VMNode.findOne({ vmName });
     if (!vmNode) {
-      vmNode = new VMNode({ vmName: registryNode.vmName, ip: '127.0.0.1', region, status: 'deallocated' });
+      vmNode = new VMNode({ vmName, ip: '127.0.0.1', region: azureLocation, status: 'deallocated' });
       await vmNode.save();
     }
 
     // 2. If Azure is configured and VM literally doesn't exist yet, provision it from scratch
     if (isAzureConfigured) {
-      const vmExists = await doesVMExist(registryNode.vmName);
+      const vmExists = await doesVMExist(vmName);
       if (!vmExists) {
-        console.log(`[Azure Orchestrator] VM ${registryNode.vmName} does not exist in Azure. Provisioning infrastructure...`);
-        await ensureAzureVM(registryNode.vmName, registryNode.azureLocation);
+        console.log(`[Azure Orchestrator] VM ${vmName} does not exist in Azure. Provisioning infrastructure in ${azureLocation}...`);
+        await ensureAzureVM(vmName, azureLocation);
 
         vmNode.status = 'starting';
         await vmNode.save();
@@ -305,23 +265,23 @@ app.post('/api/servers/deploy', protect, checkLimits, async (req, res) => {
         let resolvedIp = null;
         for (let attempt = 1; attempt <= 15; attempt++) {
           await new Promise(r => setTimeout(r, 4000));
-          resolvedIp = await getVMPublicIP(registryNode.vmName);
+          resolvedIp = await getVMPublicIP(vmName);
           if (resolvedIp) break;
         }
         if (!resolvedIp) {
-          throw new Error(`Failed to resolve dynamic public IP for newly provisioned Azure VM ${registryNode.vmName}.`);
+          throw new Error(`Failed to resolve dynamic public IP for newly provisioned Azure VM ${vmName}.`);
         }
         vmNode.ip = resolvedIp;
         vmNode.status = 'running';
         await vmNode.save();
 
         // Give cloud-init time to install Node, Java, download daemon, and start PM2
-        console.log(`[Azure Orchestrator] Waiting 60s for cloud-init to complete on ${registryNode.vmName}...`);
+        console.log(`[Azure Orchestrator] Waiting 60s for cloud-init to complete on ${vmName}...`);
         await new Promise(r => setTimeout(r, 60000));
       } else if (vmNode.status === 'deallocated') {
         // VM exists but is stopped — just start it
-        console.log(`[Azure Orchestrator] Deploy requested in deallocated node. Booting ${vmNode.vmName}...`);
-        await startAzureVM(vmNode.vmName);
+        console.log(`[Azure Orchestrator] Deploy requested in deallocated node. Booting ${vmName}...`);
+        await startAzureVM(vmName);
         vmNode.status = 'starting';
         await vmNode.save();
         
@@ -329,11 +289,11 @@ app.post('/api/servers/deploy', protect, checkLimits, async (req, res) => {
         let resolvedIp = null;
         for (let attempt = 1; attempt <= 10; attempt++) {
           await new Promise(r => setTimeout(r, 4000));
-          resolvedIp = await getVMPublicIP(vmNode.vmName);
+          resolvedIp = await getVMPublicIP(vmName);
           if (resolvedIp) break;
         }
         if (!resolvedIp) {
-          throw new Error(`Failed to resolve dynamic public IP for Azure VM ${vmNode.vmName}.`);
+          throw new Error(`Failed to resolve dynamic public IP for Azure VM ${vmName}.`);
         }
         vmNode.ip = resolvedIp;
         vmNode.status = 'running';
@@ -341,7 +301,7 @@ app.post('/api/servers/deploy', protect, checkLimits, async (req, res) => {
       }
     }
 
-    const nodeUrl = await getNodeUrlByRegion(region);
+    const nodeUrl = await getNodeUrlByLocation(azureLocation);
 
     // 3. Send deploy command to Node Daemon
     const daemonRes = await fetch(`${nodeUrl}/api/daemon/deploy`, {
@@ -354,12 +314,20 @@ app.post('/api/servers/deploy', protect, checkLimits, async (req, res) => {
         versionType, 
         versionNumber,
         publicIp: isAzureConfigured ? vmNode.ip : (process.env.PUBLIC_DOMAIN || 'crafthost.saikumar.co.in'),
-        node: registryNode.region
+        node: azureLocation
       })
     });
     
     if (!daemonRes.ok) throw new Error(await daemonRes.text());
     const data = await daemonRes.json();
+
+    // Store azureLocation in server metadata for future lookups
+    const newMetaPath = path.join(SERVERS_DIR, data.server.id, 'crafthost-meta.json');
+    if (fs.existsSync(newMetaPath)) {
+      const newMeta = JSON.parse(fs.readFileSync(newMetaPath, 'utf8'));
+      newMeta.azureLocation = azureLocation;
+      fs.writeFileSync(newMetaPath, JSON.stringify(newMeta, null, 2));
+    }
 
     // Increment server count on the VM
     if (vmNode) {
@@ -379,32 +347,30 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
   const { action } = req.body;
   const meta = req.serverMeta;
 
-  // Resolve region from node
-  let region = 'ap-south-1';
-  for (const regCode of Object.keys(NODES)) {
-    if (NODES[regCode].region === meta.node) {
-      region = regCode;
-      break;
-    }
+  // Resolve azure location from metadata
+  let azureLocation = meta.azureLocation;
+  if (!azureLocation && meta.node) {
+    azureLocation = LEGACY_NODE_MAP[meta.node] || 'eastus';
   }
+  if (!azureLocation) azureLocation = 'eastus';
 
-  const registryNode = NODES[region];
+  const vmName = getVMName(azureLocation);
 
   try {
-    let vmNode = await VMNode.findOne({ vmName: registryNode.vmName });
+    let vmNode = await VMNode.findOne({ vmName });
     if (!vmNode) {
-      vmNode = new VMNode({ vmName: registryNode.vmName, ip: '127.0.0.1', region, status: 'deallocated' });
+      vmNode = new VMNode({ vmName, ip: '127.0.0.1', region: azureLocation, status: 'deallocated' });
       await vmNode.save();
     }
 
     // 1. If starting a server on a VM that doesn't exist or is deallocated, handle it
     if (action === 'start' && isAzureConfigured) {
-      const vmExists = await doesVMExist(registryNode.vmName);
+      const vmExists = await doesVMExist(vmName);
       
       if (!vmExists) {
         // VM doesn't exist in Azure yet — provision from scratch
-        console.log(`[Azure Orchestrator] Server start requested but VM ${vmNode.vmName} does not exist. Provisioning...`);
-        await ensureAzureVM(registryNode.vmName, registryNode.azureLocation);
+        console.log(`[Azure Orchestrator] Server start requested but VM ${vmName} does not exist. Provisioning in ${azureLocation}...`);
+        await ensureAzureVM(vmName, azureLocation);
 
         vmNode.status = 'starting';
         await vmNode.save();
@@ -412,11 +378,11 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
         let resolvedIp = null;
         for (let attempt = 1; attempt <= 15; attempt++) {
           await new Promise(r => setTimeout(r, 4000));
-          resolvedIp = await getVMPublicIP(vmNode.vmName);
+          resolvedIp = await getVMPublicIP(vmName);
           if (resolvedIp) break;
         }
         if (!resolvedIp) {
-          throw new Error(`Failed to resolve dynamic IP for newly provisioned Azure VM ${vmNode.vmName}`);
+          throw new Error(`Failed to resolve dynamic IP for newly provisioned Azure VM ${vmName}`);
         }
         vmNode.ip = resolvedIp;
         vmNode.status = 'running';
@@ -429,12 +395,12 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
         fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
 
         // Wait for cloud-init to finish
-        console.log(`[Azure Orchestrator] Waiting 60s for cloud-init on ${vmNode.vmName}...`);
+        console.log(`[Azure Orchestrator] Waiting 60s for cloud-init on ${vmName}...`);
         await new Promise(r => setTimeout(r, 60000));
       } else if (vmNode.status === 'deallocated') {
         // VM exists but is stopped — just start it
-        console.log(`[Azure Orchestrator] Server start requested on deallocated node. Powering on Azure VM ${vmNode.vmName}...`);
-        await startAzureVM(vmNode.vmName);
+        console.log(`[Azure Orchestrator] Server start requested on deallocated node. Powering on Azure VM ${vmName}...`);
+        await startAzureVM(vmName);
         
         vmNode.status = 'starting';
         await vmNode.save();
@@ -443,11 +409,11 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
         let resolvedIp = null;
         for (let attempt = 1; attempt <= 10; attempt++) {
           await new Promise(r => setTimeout(r, 4000));
-          resolvedIp = await getVMPublicIP(vmNode.vmName);
+          resolvedIp = await getVMPublicIP(vmName);
           if (resolvedIp) break;
         }
         if (!resolvedIp) {
-          throw new Error(`Failed to resolve dynamic IP for Azure VM ${vmNode.vmName}`);
+          throw new Error(`Failed to resolve dynamic IP for Azure VM ${vmName}`);
         }
         vmNode.ip = resolvedIp;
         vmNode.status = 'running';
@@ -464,7 +430,7 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
       }
     }
 
-    const nodeUrl = await getNodeUrlByRegion(region);
+    const nodeUrl = await getNodeUrlByLocation(azureLocation);
 
     // 2. Dispatch start/stop power command to the worker daemon
     const daemonRes = await fetch(`${nodeUrl}/api/daemon/power/${id}`, {
@@ -485,8 +451,8 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
           const activeRunningCount = statusData.running ? statusData.running.length : 0;
           
           if (activeRunningCount === 0) {
-            console.log(`[Azure Orchestrator] VM ${vmNode.vmName} has 0 running servers. Triggering cost-saving deallocation...`);
-            await deallocateAzureVM(vmNode.vmName);
+            console.log(`[Azure Orchestrator] VM ${vmName} has 0 running servers. Triggering cost-saving deallocation...`);
+            await deallocateAzureVM(vmName);
             vmNode.status = 'deallocated';
             await vmNode.save();
           }
@@ -663,18 +629,14 @@ app.delete('/api/servers/:id', protect, checkServerAccess, async (req, res) => {
     }
 
     // Decrement server count in VMNode
-    // Note: To be fully accurate, we should find the correct region from meta
-    let region = 'ap-south-1';
-    if (req.serverMeta && req.serverMeta.node) {
-      for (const regCode of Object.keys(NODES)) {
-        if (NODES[regCode].region === req.serverMeta.node) {
-          region = regCode;
-          break;
-        }
-      }
+    let azureLocation = req.serverMeta?.azureLocation;
+    if (!azureLocation && req.serverMeta?.node) {
+      azureLocation = LEGACY_NODE_MAP[req.serverMeta.node] || 'eastus';
     }
+    if (!azureLocation) azureLocation = 'eastus';
     
-    const vmNode = await VMNode.findOne({ region });
+    const vmName = getVMName(azureLocation);
+    const vmNode = await VMNode.findOne({ vmName });
     if (vmNode && vmNode.activeServersCount > 0) {
       vmNode.activeServersCount -= 1;
       await vmNode.save();
