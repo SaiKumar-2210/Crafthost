@@ -1,13 +1,14 @@
+import { useNavigate } from 'react-router-dom'
 import Sidebar from '../components/layout/Sidebar'
 import StatsGrid from '../components/dashboard/StatsGrid'
 import ServerCard from '../components/dashboard/ServerCard'
-import DeployModal from '../components/dashboard/DeployModal'
-import { Search, Bell } from 'lucide-react'
+import { Search, Bell, Plus } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import './Dashboard.css'
 
 export default function Dashboard() {
-  const { user, servers, showDeployModal, setShowDeployModal } = useApp()
+  const navigate = useNavigate()
+  const { user, servers } = useApp()
 
   return (
     <div className="dashboard-layout">
@@ -24,6 +25,12 @@ export default function Dashboard() {
             <button className="btn-icon">
               <Bell size={20} />
               <span className="notification-dot"></span>
+            </button>
+            <button 
+              className="btn btn-primary btn-deploy-topbar" 
+              onClick={() => navigate('/deploy')}
+            >
+              <Plus size={16} /> Deploy Server
             </button>
           </div>
         </header>
@@ -52,7 +59,6 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-      {showDeployModal && <DeployModal onClose={() => setShowDeployModal(false)} />}
     </div>
   )
 }

@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard'
 import ServerPanel from './pages/ServerPanel'
 import Auth from './pages/Auth'
 import PricingPage from './pages/PricingPage'
+import DeployPage from './pages/DeployPage'
 import './App.css'
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/deploy" element={<DeployPage />} />
           <Route path="/server/:id" element={<ServerPanel />} />
         </Route>
       </Routes>

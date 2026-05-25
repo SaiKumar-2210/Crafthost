@@ -8,7 +8,7 @@ export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
-  const { user, logout, setShowDeployModal } = useApp()
+  const { user, logout } = useApp()
 
   const handleLogout = () => {
     logout()
@@ -95,7 +95,7 @@ export default function Sidebar() {
           <button 
             className="btn btn-primary" 
             style={{ width: '100%', justifyContent: collapsed ? 'center' : 'flex-start', padding: collapsed ? '0.75rem 0' : '0.75rem 1rem' }}
-            onClick={() => setShowDeployModal(true)}
+            onClick={() => navigate('/deploy')}
           >
             <Plus size={18} />
             {!collapsed && <span>Deploy Server</span>}

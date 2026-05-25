@@ -78,9 +78,6 @@ export function AppProvider({ children }) {
     return () => clearInterval(interval)
   }, [user])
 
-  // --- Deploy Modal State ---
-  const [showDeployModal, setShowDeployModal] = useState(false)
-
   // --- Actions ---
   const deployServer = async (name, version, azureLocation) => {
     try {
@@ -136,7 +133,6 @@ export function AppProvider({ children }) {
     <AppContext.Provider value={{ 
       user, loading, login, logout,
       servers, deployServer, toggleServerStatus,
-      showDeployModal, setShowDeployModal,
       getAuthHeaders, API_BASE
     }}>
       {children}

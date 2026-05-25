@@ -157,9 +157,9 @@ async function ensureAzureVM(vmName, azureLocation) {
     return true;
   }
 
-  const vnetName = 'CraftHost-VNet';
-  const subnetName = 'CraftHost-Subnet';
-  const nsgName = 'CraftHost-NSG';
+  const vnetName = `CraftHost-VNet-${azureLocation}`;
+  const subnetName = `CraftHost-Subnet-${azureLocation}`;
+  const nsgName = `CraftHost-NSG-${azureLocation}`;
   const publicIpName = `${vmName}-pip`;
   const nicName = `${vmName}-nic`;
   const osDiskName = `${vmName}-osdisk`;
