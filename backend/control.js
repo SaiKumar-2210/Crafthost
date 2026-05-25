@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
@@ -41,11 +42,18 @@ async function initVMNodes() {
 
   for (const node of defaultNodes) {
     try {
-      await VMNode.findOneAndUpdate(
-        { vmName: node.vmName },
-        { region: node.region },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
-      );
+      let vmNode = await VMNode.findOne({ vmName: node.vmName });
+      if (!vmNode) {
+        // Create fresh document with all required fields
+        vmNode = new VMNode(node);
+        await vmNode.save();
+        console.log(`[Init] Created VMNode ${node.vmName}`);
+      } else if (!vmNode.ip) {
+        // Fix any legacy/corrupt documents missing the required ip field
+        vmNode.ip = node.ip;
+        await vmNode.save();
+        console.log(`[Init] Repaired missing ip for VMNode ${node.vmName}`);
+      }
     } catch (e) {
       console.error(`Error initializing VMNode ${node.vmName}:`, e.message);
     }
