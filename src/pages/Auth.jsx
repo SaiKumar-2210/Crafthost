@@ -26,7 +26,7 @@ export default function Auth({ type = 'login' }) {
     setLoading(true)
     setError('')
     
-    const API_BASE = '/api'
+    const API_BASE = import.meta.env.VITE_API_BASE || '/api';
     const endpoint = isLogin ? '/auth/login' : '/auth/register'
     
     try {

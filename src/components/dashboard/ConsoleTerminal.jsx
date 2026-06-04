@@ -106,7 +106,8 @@ export default function ConsoleTerminal() {
   useEffect(() => {
     let isFirstConnect = true
 
-    const newSocket = io('/', {
+    const SOCKET_URL = import.meta.env.VITE_API_BASE ? import.meta.env.VITE_API_BASE.replace('/api', '') : '/';
+    const newSocket = io(SOCKET_URL, {
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 2000,

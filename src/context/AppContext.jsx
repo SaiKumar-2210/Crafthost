@@ -3,7 +3,7 @@ import { createContext, useState, useContext, useEffect, useRef } from 'react'
 import { io } from 'socket.io-client'
 
 const AppContext = createContext()
-const API_BASE = '/api'
+const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 
 export function AppProvider({ children }) {
   // --- Auth State ---
@@ -98,7 +98,8 @@ export function AppProvider({ children }) {
       return
     }
 
-    const socket = io('/', {
+    const SOCKET_URL = import.meta.env.VITE_API_BASE ? import.meta.env.VITE_API_BASE.replace('/api', '') : '/';
+    const socket = io(SOCKET_URL, {
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 2000,
