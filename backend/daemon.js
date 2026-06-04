@@ -187,7 +187,7 @@ app.post('/api/daemon/deploy', async (req, res) => {
     
     const meta = {
       id, name, ownerId, versionType, versionNumber, ip: publicIp, port: assignedPort,
-      players: '0/20', uptime: '0m', node: node || process.env.NODE_REGION || 'Local Windows Node'
+      players: '0/20', uptime: '0m', node: node || process.env.VM_REGION || 'local'
     };
     
     fs.writeFileSync(path.join(serverPath, 'crafthost-meta.json'), JSON.stringify(meta, null, 2));
@@ -234,7 +234,7 @@ app.post('/api/daemon/power/:id', async (req, res) => {
         const line = data.toString();
         if (!consoleHistory[id]) consoleHistory[id] = [];
         consoleHistory[id].push(line);
-        if (consoleHistory[id].length > 250) consoleHistory[id].shift();
+        if (consoleHistory[id].length > 500) consoleHistory[id].shift();
         io.to(`server-${id}`).emit('console-log', line);
         if (line.includes('Done (') || line.includes('For help, type "help"')) {
           io.to(`server-${id}`).emit('status-update', 'online');
@@ -244,8 +244,12 @@ app.post('/api/daemon/power/:id', async (req, res) => {
         const line = data.toString();
         if (!consoleHistory[id]) consoleHistory[id] = [];
         consoleHistory[id].push(line);
-        if (consoleHistory[id].length > 250) consoleHistory[id].shift();
+        if (consoleHistory[id].length > 500) consoleHistory[id].shift();
         io.to(`server-${id}`).emit('console-error', line);
+        // Paper MC uses Log4J2 which outputs to stderr — check for startup completion here too
+        if (line.includes('Done (') || line.includes('For help, type "help"')) {
+          io.to(`server-${id}`).emit('status-update', 'online');
+        }
       });
       serverProcess.on('error', (err) => {
         io.to(`server-${id}`).emit('console-error', err.message);
@@ -274,6 +278,24 @@ app.post('/api/daemon/power/:id', async (req, res) => {
     }
     res.json({ success: true, status: 'offline' });
   }
+});
+
+// 3b. Kill ALL running servers (cleanup endpoint)
+app.post('/api/daemon/kill-all', (req, res) => {
+  const killed = [];
+  for (const id of Object.keys(runningProcesses)) {
+    try {
+      runningProcesses[id].kill('SIGKILL');
+      killed.push(id);
+    } catch { /* ignore */ }
+    delete runningProcesses[id];
+    delete processStartTimes[id];
+    delete consoleHistory[id];
+    io.to(`server-${id}`).emit('status-update', 'offline');
+    io.to(`server-${id}`).emit('console-log', '[System] Server force-killed by admin.\r\n');
+  }
+  console.log(`[Daemon] Kill-all: terminated ${killed.length} servers: ${killed.join(', ') || 'none'}`);
+  res.json({ success: true, killed });
 });
 
 // 4. Players API (RCON)
@@ -405,7 +427,7 @@ app.post('/api/daemon/command/:id', (req, res) => {
     const echo = `> ${command}\r\n`;
     if (!consoleHistory[id]) consoleHistory[id] = [];
     consoleHistory[id].push(echo);
-    if (consoleHistory[id].length > 250) consoleHistory[id].shift();
+    if (consoleHistory[id].length > 500) consoleHistory[id].shift();
     io.to(`server-${id}`).emit('console-log', echo);
     return res.json({ success: true });
   }
@@ -504,6 +526,13 @@ app.get('/api/daemon/files/download/:id', (req, res) => {
   }
 });
 
+// HTTP endpoint for console history (fallback when Socket.IO relay is slow)
+app.get('/api/daemon/console/:id', (req, res) => {
+  const { id } = req.params;
+  const history = consoleHistory[id] || [];
+  res.json({ logs: history.join('') });
+});
+
 // Socket routing
 io.on('connection', (socket) => {
   socket.on('join-server', (serverId) => {
@@ -518,13 +547,87 @@ io.on('connection', (socket) => {
       const echo = `> ${command}\r\n`;
       if (!consoleHistory[serverId]) consoleHistory[serverId] = [];
       consoleHistory[serverId].push(echo);
-      if (consoleHistory[serverId].length > 250) consoleHistory[serverId].shift();
+      if (consoleHistory[serverId].length > 500) consoleHistory[serverId].shift();
       io.to(`server-${serverId}`).emit('console-log', echo);
     }
   });
 });
 
+// =============================================
+//  AGENT REGISTRATION & HEARTBEAT
+// =============================================
+
+// --- Fix #5b: Enforce HTTPS for CONTROL_PLANE_URL ---
+const rawControlPlaneUrl = process.env.CONTROL_PLANE_URL || 'http://localhost:3000';
+function validateControlPlaneUrl(url) {
+  if (url.startsWith('http://')) {
+    if (url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1')) {
+      return url; // Allow HTTP for local dev
+    }
+    console.warn('[Daemon] ⚠️  CRITICAL: CONTROL_PLANE_URL is using HTTP — daemon secret will be sent unencrypted!');
+    console.warn('[Daemon]    Auto-upgrading to HTTPS. Set CONTROL_PLANE_URL=https://... to silence this.');
+    return url.replace('http://', 'https://');
+  }
+  return url;
+}
+const CONTROL_PLANE_URL = validateControlPlaneUrl(rawControlPlaneUrl);
+const VM_NAME = process.env.VM_NAME || 'crafthost-vm-local-1';
+const VM_REGION = process.env.VM_REGION || 'local';
+
+async function getPublicIp() {
+  try {
+    const res = await fetch('https://api.ipify.org?format=json');
+    const data = await res.json();
+    return data.ip;
+  } catch {
+    return '127.0.0.1';
+  }
+}
+
+async function registerWithControlPlane() {
+  const ip = await getPublicIp();
+  try {
+    await fetch(`${CONTROL_PLANE_URL}/api/internal/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-daemon-secret': DAEMON_SECRET },
+      body: JSON.stringify({ vmName: VM_NAME, region: VM_REGION, ip, maxSlots: 5 })
+    });
+    console.log(`[Agent] ✅ Registered with Control Plane as ${VM_NAME} (${VM_REGION}) @ ${ip}`);
+  } catch (err) {
+    console.error(`[Agent] ❌ Registration failed:`, err.message);
+  }
+}
+
+async function sendHeartbeat() {
+  try {
+    const os = require('os');
+    const cpuPercent = Math.round(os.loadavg()[0] * 100 / (os.cpus().length || 1));
+    const ramUsedMB = Math.round((os.totalmem() - os.freemem()) / 1024 / 1024);
+
+    await fetch(`${CONTROL_PLANE_URL}/api/internal/heartbeat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-daemon-secret': DAEMON_SECRET },
+      body: JSON.stringify({
+        vmName: VM_NAME,
+        runningServers: Object.keys(runningProcesses),
+        cpuPercent,
+        ramUsedMB
+      })
+    });
+  } catch (err) {
+    console.error(`[Agent] Heartbeat failed:`, err.message);
+  }
+}
+
+// Register 5 seconds after startup, then heartbeat every 30 seconds
+setTimeout(registerWithControlPlane, 5000);
+setInterval(sendHeartbeat, 30000);
+
+// =============================================
+//  START SERVER
+// =============================================
+
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
-  console.log(`CraftHost Worker Daemon running on port ${PORT}`);
+  console.log(`⚙️  CraftHost Worker Daemon running on port ${PORT} | VM: ${VM_NAME} (${VM_REGION})`);
 });

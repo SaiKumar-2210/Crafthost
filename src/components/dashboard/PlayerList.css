@@ -126,5 +126,64 @@
 .player-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.player-action-btn {
+  display: inline-flex;
+  align-items: center;
   gap: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.player-action-btn.op {
+  color: var(--accent-primary);
+  background: hsla(152, 76%, 44%, 0.1);
+  border-color: hsla(152, 76%, 44%, 0.25);
+}
+
+.player-action-btn.op:hover {
+  background: hsla(152, 76%, 44%, 0.2);
+  border-color: hsla(152, 76%, 44%, 0.4);
+}
+
+.player-action-btn.deop {
+  color: var(--status-warning);
+  background: hsla(38, 92%, 50%, 0.1);
+  border-color: hsla(38, 92%, 50%, 0.25);
+}
+
+.player-action-btn.deop:hover {
+  background: hsla(38, 92%, 50%, 0.2);
+  border-color: hsla(38, 92%, 50%, 0.4);
+}
+
+.player-action-btn.kick {
+  color: var(--status-warning);
+  background: hsla(38, 92%, 50%, 0.1);
+  border-color: hsla(38, 92%, 50%, 0.25);
+}
+
+.player-action-btn.kick:hover {
+  background: hsla(38, 92%, 50%, 0.2);
+  border-color: hsla(38, 92%, 50%, 0.4);
+}
+
+.player-action-btn.ban {
+  color: var(--status-danger);
+  background: hsla(0, 72%, 51%, 0.1);
+  border-color: hsla(0, 72%, 51%, 0.25);
+}
+
+.player-action-btn.ban:hover {
+  background: hsla(0, 72%, 51%, 0.2);
+  border-color: hsla(0, 72%, 51%, 0.4);
 }

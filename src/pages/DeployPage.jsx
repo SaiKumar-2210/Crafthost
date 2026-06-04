@@ -4,7 +4,7 @@ import Sidebar from '../components/layout/Sidebar'
 import { useApp } from '../context/AppContext'
 import { 
   Globe2, Cpu, Server, ChevronRight, ChevronLeft, 
-  MapPin, Sparkles, Shield, Zap, Check, Loader2
+  MapPin, Sparkles, Shield, Zap, Check, Loader2, AlertCircle
 } from 'lucide-react'
 import './DeployPage.css'
 
@@ -35,76 +35,21 @@ const versions = [
   }
 ]
 
-// Full region catalog with metadata
-const ALL_REGIONS = [
-  { value: 'eastus', label: 'East US', city: 'Virginia', country: '🇺🇸', group: 'Americas' },
-  { value: 'eastus2', label: 'East US 2', city: 'Virginia', country: '🇺🇸', group: 'Americas' },
-  { value: 'westus2', label: 'West US 2', city: 'Washington', country: '🇺🇸', group: 'Americas' },
-  { value: 'westus3', label: 'West US 3', city: 'Arizona', country: '🇺🇸', group: 'Americas' },
-  { value: 'centralus', label: 'Central US', city: 'Iowa', country: '🇺🇸', group: 'Americas' },
-  { value: 'southcentralus', label: 'South Central US', city: 'Texas', country: '🇺🇸', group: 'Americas' },
-  { value: 'northcentralus', label: 'North Central US', city: 'Illinois', country: '🇺🇸', group: 'Americas' },
-  { value: 'westus', label: 'West US', city: 'California', country: '🇺🇸', group: 'Americas' },
-  { value: 'canadacentral', label: 'Canada Central', city: 'Toronto', country: '🇨🇦', group: 'Americas' },
-  { value: 'canadaeast', label: 'Canada East', city: 'Quebec', country: '🇨🇦', group: 'Americas' },
-  { value: 'brazilsouth', label: 'Brazil South', city: 'São Paulo', country: '🇧🇷', group: 'Americas' },
-  { value: 'brazilsoutheast', label: 'Brazil Southeast', city: 'Rio de Janeiro', country: '🇧🇷', group: 'Americas' },
-  { value: 'chilecentral', label: 'Chile Central', city: 'Santiago', country: '🇨🇱', group: 'Americas' },
-  { value: 'mexicocentral', label: 'Mexico Central', city: 'Mexico City', country: '🇲🇽', group: 'Americas' },
-  { value: 'northeurope', label: 'North Europe', city: 'Dublin', country: '🇮🇪', group: 'Europe' },
-  { value: 'westeurope', label: 'West Europe', city: 'Amsterdam', country: '🇳🇱', group: 'Europe' },
-  { value: 'uksouth', label: 'UK South', city: 'London', country: '🇬🇧', group: 'Europe' },
-  { value: 'ukwest', label: 'UK West', city: 'Cardiff', country: '🇬🇧', group: 'Europe' },
-  { value: 'francecentral', label: 'France Central', city: 'Paris', country: '🇫🇷', group: 'Europe' },
-  { value: 'francesouth', label: 'France South', city: 'Marseille', country: '🇫🇷', group: 'Europe' },
-  { value: 'germanywestcentral', label: 'Germany West Central', city: 'Frankfurt', country: '🇩🇪', group: 'Europe' },
-  { value: 'germanynorth', label: 'Germany North', city: 'Berlin', country: '🇩🇪', group: 'Europe' },
-  { value: 'swedencentral', label: 'Sweden Central', city: 'Gävle', country: '🇸🇪', group: 'Europe' },
-  { value: 'norwayeast', label: 'Norway East', city: 'Oslo', country: '🇳🇴', group: 'Europe' },
-  { value: 'norwaywest', label: 'Norway West', city: 'Stavanger', country: '🇳🇴', group: 'Europe' },
-  { value: 'switzerlandnorth', label: 'Switzerland North', city: 'Zurich', country: '🇨🇭', group: 'Europe' },
-  { value: 'switzerlandwest', label: 'Switzerland West', city: 'Geneva', country: '🇨🇭', group: 'Europe' },
-  { value: 'italynorth', label: 'Italy North', city: 'Milan', country: '🇮🇹', group: 'Europe' },
-  { value: 'spaincentral', label: 'Spain Central', city: 'Madrid', country: '🇪🇸', group: 'Europe' },
-  { value: 'polandcentral', label: 'Poland Central', city: 'Warsaw', country: '🇵🇱', group: 'Europe' },
-  { value: 'austriaeast', label: 'Austria East', city: 'Vienna', country: '🇦🇹', group: 'Europe' },
-  { value: 'belgiumcentral', label: 'Belgium Central', city: 'Brussels', country: '🇧🇪', group: 'Europe' },
-  { value: 'denmarkeast', label: 'Denmark East', city: 'Copenhagen', country: '🇩🇰', group: 'Europe' },
-  { value: 'southeastasia', label: 'Southeast Asia', city: 'Singapore', country: '🇸🇬', group: 'Asia Pacific' },
-  { value: 'eastasia', label: 'East Asia', city: 'Hong Kong', country: '🇭🇰', group: 'Asia Pacific' },
-  { value: 'japaneast', label: 'Japan East', city: 'Tokyo', country: '🇯🇵', group: 'Asia Pacific' },
-  { value: 'japanwest', label: 'Japan West', city: 'Osaka', country: '🇯🇵', group: 'Asia Pacific' },
-  { value: 'koreacentral', label: 'Korea Central', city: 'Seoul', country: '🇰🇷', group: 'Asia Pacific' },
-  { value: 'koreasouth', label: 'Korea South', city: 'Busan', country: '🇰🇷', group: 'Asia Pacific' },
-  { value: 'centralindia', label: 'Central India', city: 'Pune', country: '🇮🇳', group: 'Asia Pacific' },
-  { value: 'westindia', label: 'West India', city: 'Mumbai', country: '🇮🇳', group: 'Asia Pacific' },
-  { value: 'southindia', label: 'South India', city: 'Chennai', country: '🇮🇳', group: 'Asia Pacific' },
-  { value: 'jioindiawest', label: 'Jio India West', city: 'Jamnagar', country: '🇮🇳', group: 'Asia Pacific' },
-  { value: 'jioindiacentral', label: 'Jio India Central', city: 'Nagpur', country: '🇮🇳', group: 'Asia Pacific' },
-  { value: 'australiaeast', label: 'Australia East', city: 'Sydney', country: '🇦🇺', group: 'Asia Pacific' },
-  { value: 'australiasoutheast', label: 'Australia Southeast', city: 'Melbourne', country: '🇦🇺', group: 'Asia Pacific' },
-  { value: 'australiacentral', label: 'Australia Central', city: 'Canberra', country: '🇦🇺', group: 'Asia Pacific' },
-  { value: 'newzealandnorth', label: 'New Zealand North', city: 'Auckland', country: '🇳🇿', group: 'Asia Pacific' },
-  { value: 'indonesiacentral', label: 'Indonesia Central', city: 'Jakarta', country: '🇮🇩', group: 'Asia Pacific' },
-  { value: 'malaysiawest', label: 'Malaysia West', city: 'Kuala Lumpur', country: '🇲🇾', group: 'Asia Pacific' },
-  { value: 'uaenorth', label: 'UAE North', city: 'Dubai', country: '🇦🇪', group: 'Middle East & Africa' },
-  { value: 'uaecentral', label: 'UAE Central', city: 'Abu Dhabi', country: '🇦🇪', group: 'Middle East & Africa' },
-  { value: 'israelcentral', label: 'Israel Central', city: 'Tel Aviv', country: '🇮🇱', group: 'Middle East & Africa' },
-  { value: 'qatarcentral', label: 'Qatar Central', city: 'Doha', country: '🇶🇦', group: 'Middle East & Africa' },
-  { value: 'southafricanorth', label: 'South Africa North', city: 'Johannesburg', country: '🇿🇦', group: 'Middle East & Africa' },
-]
-
 export default function DeployPage() {
   const navigate = useNavigate()
-  const { deployServer, getAuthHeaders, API_BASE } = useApp()
+  const { deployServer, getJobStatus, getAuthHeaders, API_BASE } = useApp()
   const [step, setStep] = useState(1)
   const [serverName, setServerName] = useState('')
   const [version, setVersion] = useState('1.21.11')
-  const [azureLocation, setAzureLocation] = useState('eastus')
+  const [azureLocation, setAzureLocation] = useState('')
   const [isDeploying, setIsDeploying] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [regions, setRegions] = useState([])
   const [regionsLoading, setRegionsLoading] = useState(true)
+
+  // Progress tracking states
+  const [deployJobId, setDeployJobId] = useState(null)
+  const [jobStatus, setJobStatus] = useState(null)
 
   // Fetch safe Azure regions from backend on mount
   useEffect(() => {
@@ -130,6 +75,23 @@ export default function DeployPage() {
     fetchRegions()
   }, [API_BASE, getAuthHeaders])
 
+  // Polling for job status
+  useEffect(() => {
+    let interval;
+    if (step === 4 && deployJobId) {
+      interval = setInterval(async () => {
+        const status = await getJobStatus(deployJobId)
+        if (status) {
+          setJobStatus(status)
+          if (status.status === 'completed' || status.status === 'failed') {
+            clearInterval(interval)
+          }
+        }
+      }, 2000)
+    }
+    return () => clearInterval(interval)
+  }, [step, deployJobId, getJobStatus])
+
   const selectedVersion = versions.find(v => v.id === version)
   const selectedRegion = regions.find(r => r.value === azureLocation)
 
@@ -153,8 +115,19 @@ export default function DeployPage() {
   const handleDeploy = async () => {
     setIsDeploying(true)
     try {
-      await deployServer(serverName || 'CraftHost SMP Server', version, azureLocation)
-      navigate('/dashboard')
+      const res = await deployServer(serverName || 'CraftHost SMP Server', version, azureLocation)
+      if (res.error) {
+        alert(res.error)
+        setIsDeploying(false)
+        return
+      }
+      
+      if (res.jobId) {
+        setDeployJobId(res.jobId)
+        setStep(4) // Move to progress screen
+      } else {
+        navigate('/dashboard')
+      }
     } catch (e) {
       console.error(e)
       setIsDeploying(false)
@@ -168,30 +141,54 @@ export default function DeployPage() {
     return false
   }
 
+  const getTimelineIcon = (stage, currentStatus) => {
+    const stages = ['queued', 'provisioning_vm', 'starting_vm', 'deploying_server', 'completed'];
+    const currentIndex = stages.indexOf(currentStatus);
+    const stageIndex = stages.indexOf(stage);
+
+    if (currentStatus === 'failed') return stageIndex <= currentIndex ? <AlertCircle size={16} /> : <div className="dot" />;
+    if (stageIndex < currentIndex || currentStatus === 'completed') return <Check size={16} />;
+    if (stageIndex === currentIndex) return <Loader2 size={16} className="spin" />;
+    return <div className="dot" />;
+  }
+
+  const getTimelineClass = (stage, currentStatus) => {
+    const stages = ['queued', 'provisioning_vm', 'starting_vm', 'deploying_server', 'completed'];
+    const currentIndex = stages.indexOf(currentStatus);
+    const stageIndex = stages.indexOf(stage);
+
+    if (currentStatus === 'failed') return stageIndex <= currentIndex ? 'error' : 'pending';
+    if (stageIndex < currentIndex || currentStatus === 'completed') return 'completed';
+    if (stageIndex === currentIndex) return 'active';
+    return 'pending';
+  }
+
   return (
     <div className="dashboard-layout">
       <Sidebar />
       <div className="dashboard-main deploy-page">
         <div className="deploy-wizard">
-          {/* Wizard Header */}
-          <div className="wizard-header">
-            <div className="wizard-progress">
-              <div className={`wizard-step ${step >= 1 ? 'active' : ''} ${step > 1 ? 'completed' : ''}`}>
-                <div className="step-number">{step > 1 ? <Check size={14} /> : '1'}</div>
-                <span>Name</span>
-              </div>
-              <div className={`wizard-connector ${step >= 2 ? 'active' : ''}`} />
-              <div className={`wizard-step ${step >= 2 ? 'active' : ''} ${step > 2 ? 'completed' : ''}`}>
-                <div className="step-number">{step > 2 ? <Check size={14} /> : '2'}</div>
-                <span>Version</span>
-              </div>
-              <div className={`wizard-connector ${step >= 3 ? 'active' : ''}`} />
-              <div className={`wizard-step ${step >= 3 ? 'active' : ''}`}>
-                <div className="step-number">3</div>
-                <span>Region</span>
+          {/* Wizard Header - Hide on Step 4 */}
+          {step < 4 && (
+            <div className="wizard-header">
+              <div className="wizard-progress">
+                <div className={`wizard-step ${step >= 1 ? 'active' : ''} ${step > 1 ? 'completed' : ''}`}>
+                  <div className="step-number">{step > 1 ? <Check size={14} /> : '1'}</div>
+                  <span>Name</span>
+                </div>
+                <div className={`wizard-connector ${step >= 2 ? 'active' : ''}`} />
+                <div className={`wizard-step ${step >= 2 ? 'active' : ''} ${step > 2 ? 'completed' : ''}`}>
+                  <div className="step-number">{step > 2 ? <Check size={14} /> : '2'}</div>
+                  <span>Version</span>
+                </div>
+                <div className={`wizard-connector ${step >= 3 ? 'active' : ''}`} />
+                <div className={`wizard-step ${step >= 3 ? 'active' : ''}`}>
+                  <div className="step-number">3</div>
+                  <span>Region</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Wizard Body */}
           <div className="wizard-body">
@@ -206,7 +203,7 @@ export default function DeployPage() {
                 <div className="name-input-wrapper">
                   <input
                     type="text"
-                    placeholder="e.g., CraftHost Ultra SMP, SkyBlock Legends, Pixelmon World..."
+                    placeholder="e.g., CraftHost Ultra SMP, SkyBlock Legends..."
                     value={serverName}
                     onChange={(e) => setServerName(e.target.value)}
                     className="deploy-name-input"
@@ -317,53 +314,128 @@ export default function DeployPage() {
                 )}
               </div>
             )}
-          </div>
 
-          {/* Wizard Footer */}
-          <div className="wizard-footer">
-            <div className="wizard-nav">
-              {step > 1 && (
-                <button className="btn btn-secondary" onClick={() => setStep(step - 1)}>
-                  <ChevronLeft size={16} /> Back
-                </button>
-              )}
-              {step < 3 ? (
-                <button 
-                  className="btn btn-primary" 
-                  onClick={() => setStep(step + 1)}
-                  disabled={!canProceed()}
-                >
-                  Next <ChevronRight size={16} />
-                </button>
-              ) : (
-                <button 
-                  className="btn btn-primary btn-large" 
-                  onClick={handleDeploy}
-                  disabled={isDeploying || regionsLoading}
-                >
-                  {isDeploying ? (
-                    <span className="deploying-spinner">Deploying to {selectedRegion?.label}...</span>
-                  ) : (
-                    <span><Shield size={18} /> Deploy Server</span>
+            {/* Step 4: Progress Screen */}
+            {step === 4 && (
+              <div className="wizard-step-content fade-in deploy-progress-container">
+                <div className="step-hero">
+                  <div className="step-icon">
+                    {jobStatus?.status === 'completed' ? <Check size={32} className="text-emerald-400" /> : 
+                     jobStatus?.status === 'failed' ? <AlertCircle size={32} className="text-red-400" /> :
+                     <Loader2 size={32} className="spin text-emerald-400" />}
+                  </div>
+                  <h1>Deploying "{serverName || 'CraftHost SMP Server'}"</h1>
+                  <p>{jobStatus?.message || 'Warming up engines...'}</p>
+                </div>
+
+                <div className="progress-glass">
+                  <div className="progress-bar-track">
+                    <div 
+                      className="progress-bar-fill" 
+                      style={{ width: `${jobStatus?.progress || 0}%` }}
+                    />
+                  </div>
+                  <div className="progress-percentage">
+                    {jobStatus?.progress || 0}%
+                  </div>
+
+                  <div className="progress-timeline">
+                    <div className={`timeline-item ${getTimelineClass('queued', jobStatus?.status)}`}>
+                      <div className="timeline-icon">{getTimelineIcon('queued', jobStatus?.status)}</div>
+                      <div className="timeline-text">Server job queued</div>
+                    </div>
+                    <div className={`timeline-item ${getTimelineClass('provisioning_vm', jobStatus?.status)}`}>
+                      <div className="timeline-icon">{getTimelineIcon('provisioning_vm', jobStatus?.status)}</div>
+                      <div className="timeline-text">Provisioning Virtual Machine in {selectedRegion?.label}</div>
+                    </div>
+                    <div className={`timeline-item ${getTimelineClass('starting_vm', jobStatus?.status)}`}>
+                      <div className="timeline-icon">{getTimelineIcon('starting_vm', jobStatus?.status)}</div>
+                      <div className="timeline-text">Starting VM & executing cloud-init</div>
+                    </div>
+                    <div className={`timeline-item ${getTimelineClass('deploying_server', jobStatus?.status)}`}>
+                      <div className="timeline-icon">{getTimelineIcon('deploying_server', jobStatus?.status)}</div>
+                      <div className="timeline-text">Deploying Minecraft Server</div>
+                    </div>
+                    <div className={`timeline-item ${getTimelineClass('completed', jobStatus?.status)}`}>
+                      <div className="timeline-icon">{getTimelineIcon('completed', jobStatus?.status)}</div>
+                      <div className="timeline-text">Ready to play</div>
+                    </div>
+                  </div>
+
+                  {jobStatus?.status === 'failed' && (
+                    <div className="deploy-error">
+                      <AlertCircle size={20} />
+                      <div>
+                        <strong>Deployment Failed</strong>
+                        <p>{jobStatus.error || 'An unexpected error occurred.'}</p>
+                      </div>
+                    </div>
                   )}
-                </button>
-              )}
-            </div>
-            
-            {step === 3 && !regionsLoading && (
-              <div className="deploy-summary">
-                <div className="summary-item">
-                  <Server size={14} /> {serverName || 'CraftHost SMP Server'}
-                </div>
-                <div className="summary-item">
-                  <Cpu size={14} /> {selectedVersion?.title}
-                </div>
-                <div className="summary-item">
-                  <Globe2 size={14} /> {selectedRegion?.label}, {selectedRegion?.city}
+
+                  <div className="deploy-actions mt-8 text-center">
+                    {jobStatus?.status === 'completed' && (
+                      <button className="btn btn-primary btn-large" onClick={() => navigate('/dashboard')}>
+                        <Zap size={18} /> Go to Dashboard
+                      </button>
+                    )}
+                    {jobStatus?.status === 'failed' && (
+                      <button className="btn btn-secondary" onClick={() => { setStep(3); setIsDeploying(false); }}>
+                        Back to Settings
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
           </div>
+
+          {/* Wizard Footer - Hide on Step 4 */}
+          {step < 4 && (
+            <div className="wizard-footer">
+              <div className="wizard-nav">
+                {step > 1 && (
+                  <button className="btn btn-secondary" onClick={() => setStep(step - 1)}>
+                    <ChevronLeft size={16} /> Back
+                  </button>
+                )}
+                {step < 3 ? (
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={() => setStep(step + 1)}
+                    disabled={!canProceed()}
+                  >
+                    Next <ChevronRight size={16} />
+                  </button>
+                ) : (
+                  <button 
+                    className="btn btn-primary btn-large" 
+                    onClick={handleDeploy}
+                    disabled={isDeploying || regionsLoading}
+                  >
+                    {isDeploying ? (
+                      <span className="deploying-spinner"><Loader2 size={16} className="spin" /> Queuing...</span>
+                    ) : (
+                      <span><Shield size={18} /> Deploy Server</span>
+                    )}
+                  </button>
+                )}
+              </div>
+              
+              {step === 3 && !regionsLoading && (
+                <div className="deploy-summary">
+                  <div className="summary-item">
+                    <Server size={14} /> {serverName || 'CraftHost SMP Server'}
+                  </div>
+                  <div className="summary-item">
+                    <Cpu size={14} /> {selectedVersion?.title}
+                  </div>
+                  <div className="summary-item">
+                    <Globe2 size={14} /> {selectedRegion?.label}, {selectedRegion?.city}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

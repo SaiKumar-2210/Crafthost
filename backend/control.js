@@ -1,26 +1,41 @@
+/**
+ * control.js — CraftHost Control Plane (API Gateway)
+ * 
+ * Thin API layer that:
+ *   - Handles user auth & RBAC
+ *   - Enqueues jobs to BullMQ (deploy, delete)
+ *   - Receives daemon heartbeats & registration
+ *   - Proxies live commands to daemons (power, stats, files, etc.)
+ *   - Serves the frontend build
+ * 
+ * Run with: node control.js
+ */
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
+const { Server } = require('socket.io');
+const ioClient = require('socket.io-client');
 const path = require('path');
 const fs = require('fs');
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
-const { connectDB, User, Server, ServerPermission, VMNode } = require('./db');
+const { connectDB, User, ServerPermission, VMNode, GameServer, DeployJob } = require('./db');
 const { router: authRouter, protect } = require('./routes/auth');
+const { orchestrationQueue } = require('./queues');
 const {
   isAzureConfigured,
-  ensureAzureVM,
   startAzureVM,
-  deallocateAzureVM,
   getVMPublicIP,
-  getVMStatus,
-  doesVMExist,
-  SAFE_REGION_METADATA
+  SAFE_REGION_METADATA,
+  ALLOWED_REGIONS,
 } = require('./azure-provisioner');
 
 const app = express();
 const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: '*', methods: ['GET', 'POST'] }
+});
 
 app.use(cors());
 app.use(express.json());
@@ -29,102 +44,46 @@ app.use('/api/auth', authRouter);
 
 const DAEMON_SECRET = process.env.DAEMON_SECRET || 'crafthost-internal-node-secret';
 
-// Middleware for system-level endpoints (daemon downloads, etc.)
+// Region → public hostname mapping for player-facing connection addresses
+const REGION_HOSTNAMES = {
+  centralindia: process.env.HOSTNAME_INDIA || 'crafthost.saikumar.co.in',
+  koreacentral: process.env.HOSTNAME_KOREA || 'kr.crafthost.saikumar.co.in',
+};
+const getPublicHostname = (region) => REGION_HOSTNAMES[region] || null;
+
+// --- Middleware ---
+
 const requireSystemSecret = (req, res, next) => {
   const secret = req.headers['x-daemon-secret'];
   if (secret !== DAEMON_SECRET) return res.status(403).json({ error: 'Unauthorized System Access' });
   next();
 };
 
-// Legacy mapping for old servers that stored friendly node names
-const LEGACY_NODE_MAP = {
-  'Asia Pacific (Mumbai)': 'westindia',
-  'US East (N. Virginia)': 'eastus',
-  'US West (Oregon)': 'westus2',
-  'Europe (Frankfurt)': 'germanywestcentral',
-  'Europe (Ireland)': 'northeurope',
-  'Asia Pacific (Singapore)': 'southeastasia',
-  'Asia Pacific (Tokyo)': 'japaneast',
-  'Australia (Sydney)': 'australiaeast',
-  'South America (São Paulo)': 'brazilsouth',
-  'Local Windows Node': 'eastus'
-};
-
-// Derive a safe VM name from an Azure location
-const getVMName = (azureLocation) => 'crafthost-vm-' + azureLocation.replace(/[^a-z0-9]/gi, '');
-
-// Helper to resolve daemon URL based on Azure location
-const getNodeUrlByLocation = async (azureLocation) => {
-  if (!isAzureConfigured || !azureLocation) {
-    return 'http://localhost:4000';
-  }
-  const vmName = getVMName(azureLocation);
-  try {
-    const vmNode = await VMNode.findOne({ vmName });
-    if (vmNode && vmNode.ip && vmNode.status === 'running') {
-      return `http://${vmNode.ip}:4000`;
-    }
-  } catch (err) {
-    console.error(`Error getting dynamic node URL for ${azureLocation}:`, err.message);
-  }
-  return 'http://localhost:4000';
-};
-
-const getNodeUrlByServerId = async (serverId) => {
-  const SERVERS_DIR = path.join(__dirname, 'servers');
-  const metaPath = path.join(SERVERS_DIR, serverId, 'crafthost-meta.json');
-  if (fs.existsSync(metaPath)) {
-    try {
-      const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-      let azureLocation = meta.azureLocation;
-      if (!azureLocation && meta.node) {
-        azureLocation = LEGACY_NODE_MAP[meta.node];
-      }
-      return await getNodeUrlByLocation(azureLocation || 'eastus');
-    } catch (e) {
-      // ignore
-    }
-  }
-  return 'http://localhost:4000';
-};
-
-// Dormant Billing Limits
-const checkLimits = (req, res, next) => {
-  req.limits = { maxServers: 5, concurrent: 1 };
-  next();
-};
-
-// --- ACCESS CONTROL MIDDLEWARES (RBAC) ---
+// RBAC: check server access via MongoDB (replaces filesystem-based check)
 const checkServerAccess = async (req, res, next) => {
   const { id } = req.params;
-  const SERVERS_DIR = path.join(__dirname, 'servers');
-  const metaPath = path.join(SERVERS_DIR, id, 'crafthost-meta.json');
 
-  if (!fs.existsSync(metaPath)) {
+  const gameServer = await GameServer.findOne({ serverId: id });
+  if (!gameServer) {
     return res.status(404).json({ error: 'Server not found' });
   }
 
-  try {
-    const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-    req.serverMeta = meta;
+  req.gameServer = gameServer;
 
-    // 1. Is Owner?
-    if (meta.ownerId === req.user._id.toString()) {
-      req.serverRole = 'owner';
-      return next();
-    }
-
-    // 2. Has Shared Permission?
-    const perm = await ServerPermission.findOne({ serverId: id, userId: req.user._id });
-    if (perm) {
-      req.serverRole = perm.role; // 'on_off' or 'full'
-      return next();
-    }
-
-    return res.status(403).json({ error: 'Access denied: You do not have permission for this server.' });
-  } catch (err) {
-    return res.status(500).json({ error: 'Authorization check failed: ' + err.message });
+  // 1. Is Owner?
+  if (gameServer.ownerId.toString() === req.user._id.toString()) {
+    req.serverRole = 'owner';
+    return next();
   }
+
+  // 2. Has Shared Permission?
+  const perm = await ServerPermission.findOne({ serverId: id, userId: req.user._id });
+  if (perm) {
+    req.serverRole = perm.role; // 'on_off' or 'full'
+    return next();
+  }
+
+  return res.status(403).json({ error: 'Access denied: You do not have permission for this server.' });
 };
 
 const requireFullAccess = (req, res, next) => {
@@ -134,352 +93,377 @@ const requireFullAccess = (req, res, next) => {
   next();
 };
 
-// --- ORCHESTRATION APIs ---
+// --- Helper: Get daemon URL from GameServer record ---
+const getNodeUrl = async (gameServer) => {
+  if (!gameServer || !gameServer.vmName) return 'http://localhost:4000';
+  const vmNode = await VMNode.findOne({ vmName: gameServer.vmName });
+  // Resolve IP for any VM that has one — even 'unhealthy' VMs are reachable,
+  // they just missed heartbeats. Only deallocated VMs truly have no IP.
+  if (vmNode && vmNode.ip && vmNode.status !== 'deallocated') {
+    return `http://${vmNode.ip}:4000`;
+  }
+  return 'http://localhost:4000';
+};
 
-// 1. Get All Servers (Queries owned + shared servers)
+// --- Proxy helper ---
+const proxyToDaemon = async (req, res, method, endpoint, body) => {
+  const nodeUrl = await getNodeUrl(req.gameServer);
+  try {
+    const opts = { method, headers: { 'x-daemon-secret': DAEMON_SECRET } };
+    if (body) {
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(body);
+    }
+    const dRes = await fetch(`${nodeUrl}${endpoint}`, opts);
+    const data = await dRes.json();
+    res.status(dRes.status).json(data);
+  } catch (e) {
+    res.status(500).json({ error: 'Daemon communication failed: ' + e.message });
+  }
+};
+
+// =============================================
+//  ORCHESTRATION APIs
+// =============================================
+
+// 1. Get All Servers (MongoDB-based)
 app.get('/api/servers', protect, async (req, res) => {
   try {
-    // Read local files (Control Plane handles file-based metadata registry)
-    const SERVERS_DIR = path.join(__dirname, 'servers');
-    if (!fs.existsSync(SERVERS_DIR)) fs.mkdirSync(SERVERS_DIR);
-    const dirs = fs.readdirSync(SERVERS_DIR);
-    
-    // Find all guest permissions for this user
     const sharedPerms = await ServerPermission.find({ userId: req.user._id });
     const sharedServerIds = sharedPerms.map(p => p.serverId);
 
+    const gameServers = await GameServer.find({
+      $or: [
+        { ownerId: req.user._id },
+        { serverId: { $in: sharedServerIds } }
+      ]
+    });
+
+    // Cache VMNode lookups to avoid repeated DB queries
+    const vmNodeCache = {};
     const servers = [];
-    const nodeStatusCache = {};
 
-    for (const id of dirs) {
-      const metaPath = path.join(SERVERS_DIR, id, 'crafthost-meta.json');
-      if (!fs.existsSync(metaPath)) continue;
-      
-      // Manual read to prevent require caching
-      const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-      
-      const isOwner = meta.ownerId === req.user._id.toString();
-      const isShared = sharedServerIds.includes(id);
-      
-      if (!isOwner && !isShared) continue;
-
-      // Identify azure location
-      let azureLocation = meta.azureLocation;
-      if (!azureLocation && meta.node) {
-        azureLocation = LEGACY_NODE_MAP[meta.node] || 'eastus';
+    for (const gs of gameServers) {
+      // Get VMNode for this server
+      if (gs.vmName && !vmNodeCache[gs.vmName]) {
+        vmNodeCache[gs.vmName] = await VMNode.findOne({ vmName: gs.vmName });
       }
-      if (!azureLocation) azureLocation = 'eastus';
+      const vmNode = gs.vmName ? vmNodeCache[gs.vmName] : null;
 
-      // Fetch running servers list from region daemon
-      let runningServers = [];
-      let serverUptimes = {};
-      const nodeUrl = await getNodeUrlByLocation(azureLocation);
-
-      if (nodeStatusCache[nodeUrl] === undefined) {
-        try {
-          const dRes = await fetch(`${nodeUrl}/api/daemon/status`, { headers: { 'x-daemon-secret': DAEMON_SECRET } });
-          const statusData = await dRes.json();
-          nodeStatusCache[nodeUrl] = {
-            running: statusData.running || [],
-            serverUptimes: statusData.serverUptimes || {}
-          };
-        } catch (err) {
-          nodeStatusCache[nodeUrl] = { running: [], serverUptimes: {} };
-        }
-      }
-
-      runningServers = nodeStatusCache[nodeUrl].running;
-      serverUptimes = nodeStatusCache[nodeUrl].serverUptimes;
-
-      meta.status = runningServers.includes(id) ? 'online' : 'offline';
-      meta.version = `${meta.versionType} ${meta.versionNumber}`;
-      
-      // Calculate live uptime
-      if (meta.status === 'online' && serverUptimes[id] !== undefined) {
-        const totalSeconds = serverUptimes[id];
-        const h = Math.floor(totalSeconds / 3600);
-        const m = Math.floor((totalSeconds % 3600) / 60);
-        const s = totalSeconds % 60;
-        meta.uptime = h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
+      // Determine live status: prefer heartbeat ground truth, then trust DB status
+      const isRunning = vmNode?.runningServerIds?.includes(gs.serverId) || false;
+      let status;
+      if (isRunning) {
+        status = 'online';
+      } else if (['queued', 'provisioning', 'deploying', 'online'].includes(gs.status)) {
+        // Trust the DB status — 'online' is set by the power action and will be
+        // corrected to 'offline' by the next heartbeat if the server isn't actually running.
+        status = gs.status;
       } else {
-        meta.uptime = '0m';
+        status = 'offline';
       }
 
-      // Append permission role info if shared
-      if (isShared) {
-        const pRecord = sharedPerms.find(p => p.serverId === id);
-        meta.sharedRole = pRecord.role;
-      }
+      // Build uptime string (basic; the ServerPanel fetches detailed stats from daemon)
+      let uptime = '0m';
 
-      servers.push(meta);
+      const isOwner = gs.ownerId.toString() === req.user._id.toString();
+      const isShared = sharedServerIds.includes(gs.serverId);
+      const pRecord = isShared ? sharedPerms.find(p => p.serverId === gs.serverId) : null;
+
+      servers.push({
+        id: gs.serverId,
+        name: gs.name,
+        status,
+        ip: gs.ip || vmNode?.ip,
+        hostname: getPublicHostname(gs.region),
+        port: gs.port,
+        version: `${gs.versionType} ${gs.versionNumber}`,
+        versionType: gs.versionType,
+        versionNumber: gs.versionNumber,
+        node: gs.region,
+        azureLocation: gs.region,
+        ownerId: gs.ownerId.toString(),
+        uptime,
+        players: '0/20',
+        sharedRole: pRecord?.role || undefined,
+      });
     }
+
     res.json({ servers });
-  } catch(e) {
+  } catch (e) {
     res.status(500).json({ error: 'Control Plane failed: ' + e.message });
   }
 });
 
-// 2. Deploy Server (Orchestration with Azure scaling VM boot)
-// Accepts azureLocation directly from frontend (e.g. 'eastus', 'westindia')
-app.post('/api/servers/deploy', protect, checkLimits, async (req, res) => {
-  const { name, azureLocation = 'eastus', versionType = 'Paper', versionNumber = '1.21.11' } = req.body;
-  
-  // Enforce Max Servers Limit
-  const fs = require('fs');
-  const SERVERS_DIR = path.join(__dirname, 'servers');
-  let userServersCount = 0;
-  if(fs.existsSync(SERVERS_DIR)) {
-     fs.readdirSync(SERVERS_DIR).forEach(d => {
-        const m = path.join(SERVERS_DIR, d, 'crafthost-meta.json');
-        if(fs.existsSync(m)) {
-          const meta = JSON.parse(fs.readFileSync(m, 'utf8'));
-          if (meta.ownerId === req.user._id.toString()) userServersCount++;
-        }
-     });
-  }
-  
-  if (userServersCount >= req.limits.maxServers) {
-     return res.status(403).json({ error: `Billing Plan Limit: Max ${req.limits.maxServers} servers allowed.` });
-  }
+// 2. Deploy Server (Async — enqueue job, return 202)
+app.post('/api/servers/deploy', protect, async (req, res) => {
+  const { name, azureLocation, versionType = 'Paper', versionNumber = '1.21.11' } = req.body;
 
-  const vmName = getVMName(azureLocation);
+  // Validate region — reject immediately if not in allowed list
+  if (!azureLocation || !ALLOWED_REGIONS.includes(azureLocation)) {
+    const allowed = ALLOWED_REGIONS.join(', ');
+    return res.status(400).json({
+      error: `Invalid region "${azureLocation || 'none'}". Allowed regions: ${allowed}`
+    });
+  }
 
   try {
-    // 1. Resolve VMNode in Database
-    let vmNode = await VMNode.findOne({ vmName });
-    if (!vmNode) {
-      vmNode = new VMNode({ vmName, ip: '127.0.0.1', region: azureLocation, status: 'deallocated' });
-      await vmNode.save();
+    // Enforce Max Servers Limit (5 per user)
+    const userServersCount = await GameServer.countDocuments({ ownerId: req.user._id });
+    if (userServersCount >= 5) {
+      return res.status(403).json({ error: 'Billing Plan Limit: Max 5 servers allowed.' });
     }
 
-    // 2. If Azure is configured and VM literally doesn't exist yet, provision it from scratch
-    if (isAzureConfigured) {
-      const vmExists = await doesVMExist(vmName);
-      if (!vmExists) {
-        console.log(`[Azure Orchestrator] VM ${vmName} does not exist in Azure. Provisioning infrastructure in ${azureLocation}...`);
-        const provisionResult = await ensureAzureVM(vmName, azureLocation);
-        if (provisionResult.actualLocation !== azureLocation) {
-          console.log(`[Azure Orchestrator] Fallback region used: ${provisionResult.actualLocation} (requested: ${azureLocation})`);
-          vmNode.region = provisionResult.actualLocation;
-        }
-
-        vmNode.status = 'starting';
-        await vmNode.save();
-
-        // Wait for dynamic IP allocation after creation
-        let resolvedIp = null;
-        for (let attempt = 1; attempt <= 15; attempt++) {
-          await new Promise(r => setTimeout(r, 4000));
-          resolvedIp = await getVMPublicIP(vmName);
-          if (resolvedIp) break;
-        }
-        if (!resolvedIp) {
-          throw new Error(`Failed to resolve dynamic public IP for newly provisioned Azure VM ${vmName}.`);
-        }
-        vmNode.ip = resolvedIp;
-        vmNode.status = 'running';
-        await vmNode.save();
-
-        // Give cloud-init time to install Node, Java, download daemon, and start PM2
-        console.log(`[Azure Orchestrator] Waiting 60s for cloud-init to complete on ${vmName}...`);
-        await new Promise(r => setTimeout(r, 60000));
-      } else if (vmNode.status === 'deallocated') {
-        // VM exists but is stopped — just start it
-        console.log(`[Azure Orchestrator] Deploy requested in deallocated node. Booting ${vmName}...`);
-        await startAzureVM(vmName);
-        vmNode.status = 'starting';
-        await vmNode.save();
-        
-        // Resolve Dynamic IP
-        let resolvedIp = null;
-        for (let attempt = 1; attempt <= 10; attempt++) {
-          await new Promise(r => setTimeout(r, 4000));
-          resolvedIp = await getVMPublicIP(vmName);
-          if (resolvedIp) break;
-        }
-        if (!resolvedIp) {
-          throw new Error(`Failed to resolve dynamic public IP for Azure VM ${vmName}.`);
-        }
-        vmNode.ip = resolvedIp;
-        vmNode.status = 'running';
-        await vmNode.save();
-      }
-    }
-
-    const nodeUrl = await getNodeUrlByLocation(azureLocation);
-
-    // 3. Send deploy command to Node Daemon
-    const daemonRes = await fetch(`${nodeUrl}/api/daemon/deploy`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-daemon-secret': DAEMON_SECRET },
-      body: JSON.stringify({ 
-        id: `srv-${Date.now()}`,
-        name: name || 'New Server',
-        ownerId: req.user._id.toString(),
-        versionType, 
-        versionNumber,
-        publicIp: isAzureConfigured ? vmNode.ip : (process.env.PUBLIC_DOMAIN || 'crafthost.saikumar.co.in'),
-        node: azureLocation
-      })
+    // Enqueue deploy job to BullMQ
+    const job = await orchestrationQueue.add('deploy-server', {
+      userId: req.user._id.toString(),
+      name: name || 'New SMP Server',
+      region: azureLocation,
+      versionType,
+      versionNumber,
     });
-    
-    if (!daemonRes.ok) throw new Error(await daemonRes.text());
-    const data = await daemonRes.json();
 
-    // Store azureLocation in server metadata for future lookups
-    const newMetaPath = path.join(SERVERS_DIR, data.server.id, 'crafthost-meta.json');
-    if (fs.existsSync(newMetaPath)) {
-      const newMeta = JSON.parse(fs.readFileSync(newMetaPath, 'utf8'));
-      newMeta.azureLocation = azureLocation;
-      fs.writeFileSync(newMetaPath, JSON.stringify(newMeta, null, 2));
-    }
+    console.log(`[Control] Deploy job ${job.id} queued for user ${req.user._id} in ${azureLocation}`);
 
-    // Increment server count on the VM
-    if (vmNode) {
-      vmNode.activeServersCount = (vmNode.activeServersCount || 0) + 1;
-      await vmNode.save();
-    }
-
-    res.json(data);
+    res.status(202).json({
+      jobId: job.id,
+      message: 'Server deployment queued. Track progress via /api/jobs/' + job.id,
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Orchestration / Azure scaling failed: ' + error.message });
+    res.status(500).json({ error: 'Failed to queue deployment: ' + error.message });
   }
 });
 
-// 3. Power Action Proxy (Integrated with Azure dynamic boot & cost-saving deallocation)
+// 3. Power Action (Direct proxy — VM start handled inline for responsiveness)
 app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) => {
   const { id } = req.params;
   const { action } = req.body;
-  const meta = req.serverMeta;
-
-  // Resolve azure location from metadata
-  let azureLocation = meta.azureLocation;
-  if (!azureLocation && meta.node) {
-    azureLocation = LEGACY_NODE_MAP[meta.node] || 'eastus';
-  }
-  if (!azureLocation) azureLocation = 'eastus';
-
-  const vmName = getVMName(azureLocation);
+  const gs = req.gameServer;
 
   try {
-    let vmNode = await VMNode.findOne({ vmName });
-    if (!vmNode) {
-      vmNode = new VMNode({ vmName, ip: '127.0.0.1', region: azureLocation, status: 'deallocated' });
-      await vmNode.save();
-    }
+    const vmNode = gs.vmName ? await VMNode.findOne({ vmName: gs.vmName }) : null;
 
-    // 1. If starting a server on a VM that doesn't exist or is deallocated, handle it
-    if (action === 'start' && isAzureConfigured) {
-      const vmExists = await doesVMExist(vmName);
-      
-      if (!vmExists) {
-        // VM doesn't exist in Azure yet — provision from scratch
-        console.log(`[Azure Orchestrator] Server start requested but VM ${vmName} does not exist. Provisioning in ${azureLocation}...`);
-        const provisionResult = await ensureAzureVM(vmName, azureLocation);
-        if (provisionResult.actualLocation !== azureLocation) {
-          console.log(`[Azure Orchestrator] Fallback region used: ${provisionResult.actualLocation} (requested: ${azureLocation})`);
-          vmNode.region = provisionResult.actualLocation;
-        }
-
+    // If starting and VM is deallocated, boot it first
+    if (action === 'start' && vmNode && isAzureConfigured) {
+      if (vmNode.status === 'deallocated' || vmNode.status === 'unhealthy') {
+        console.log(`[Control] Starting deallocated VM ${vmNode.vmName} for server ${id}...`);
+        await startAzureVM(vmNode.vmName);
         vmNode.status = 'starting';
         await vmNode.save();
 
-        let resolvedIp = null;
-        for (let attempt = 1; attempt <= 15; attempt++) {
-          await new Promise(r => setTimeout(r, 4000));
-          resolvedIp = await getVMPublicIP(vmName);
-          if (resolvedIp) break;
-        }
-        if (!resolvedIp) {
-          throw new Error(`Failed to resolve dynamic IP for newly provisioned Azure VM ${vmName}`);
-        }
-        vmNode.ip = resolvedIp;
-        vmNode.status = 'running';
-        await vmNode.save();
-
-        // Update metadata on disk with the new IP address
-        const SERVERS_DIR = path.join(__dirname, 'servers');
-        const metaPath = path.join(SERVERS_DIR, id, 'crafthost-meta.json');
-        meta.ip = resolvedIp;
-        fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
-
-        // Wait for cloud-init to finish
-        console.log(`[Azure Orchestrator] Waiting 60s for cloud-init on ${vmName}...`);
-        await new Promise(r => setTimeout(r, 60000));
-      } else if (vmNode.status === 'deallocated') {
-        // VM exists but is stopped — just start it
-        console.log(`[Azure Orchestrator] Server start requested on deallocated node. Powering on Azure VM ${vmName}...`);
-        await startAzureVM(vmName);
-        
-        vmNode.status = 'starting';
-        await vmNode.save();
-
-        // Resolve Dynamic IP
+        // Wait for IP
         let resolvedIp = null;
         for (let attempt = 1; attempt <= 10; attempt++) {
           await new Promise(r => setTimeout(r, 4000));
-          resolvedIp = await getVMPublicIP(vmName);
+          resolvedIp = await getVMPublicIP(vmNode.vmName);
           if (resolvedIp) break;
         }
         if (!resolvedIp) {
-          throw new Error(`Failed to resolve dynamic IP for Azure VM ${vmName}`);
+          return res.status(500).json({ error: 'Failed to resolve VM IP after restarting.' });
         }
         vmNode.ip = resolvedIp;
         vmNode.status = 'running';
         await vmNode.save();
 
-        // Update metadata on disk with the new IP address
-        const SERVERS_DIR = path.join(__dirname, 'servers');
-        const metaPath = path.join(SERVERS_DIR, id, 'crafthost-meta.json');
-        meta.ip = resolvedIp;
-        fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
+        // Update GameServer IP
+        gs.ip = resolvedIp;
+        await gs.save();
 
-        // Wait a moment for Daemon script to start responding on port 4000
+        // Wait for daemon to boot
         await new Promise(r => setTimeout(r, 5000));
       }
     }
 
-    const nodeUrl = await getNodeUrlByLocation(azureLocation);
+    const nodeUrl = await getNodeUrl(gs);
 
-    // 2. Dispatch start/stop power command to the worker daemon
-    const daemonRes = await fetch(`${nodeUrl}/api/daemon/power/${id}`, {
+    // Dispatch power command to daemon
+    const dRes = await fetch(`${nodeUrl}/api/daemon/power/${id}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-daemon-secret': DAEMON_SECRET },
-      body: JSON.stringify({ action })
+      body: JSON.stringify({ action }),
     });
-    const data = await daemonRes.json();
+    const data = await dRes.json();
 
-    // 3. Dynamic Cost Saving Deallocation:
-    // If the action was "stop" and there are now ZERO active running servers on this VM, deallocate it!
-    if (action === 'stop' && isAzureConfigured) {
-      // Small pause to let server shut down fully
+    // Update GameServer status
+    if (action === 'start' || action === 'restart') {
+      await GameServer.updateOne({ serverId: id }, { status: 'online' });
+
+      // Establish Socket.IO relay to daemon so console logs flow to browser.
+      // This handles the race where the browser joined the room before the VM was ready.
+      // Use setTimeout to let the daemon's Java process start emitting logs.
+      setTimeout(() => {
+        tryEstablishDaemonRelay(id, null).catch(err => {
+          console.error(`[Control] Failed to establish relay after power start for ${id}:`, err.message);
+        });
+      }, 1000);
+    } else if (action === 'stop') {
+      await GameServer.updateOne({ serverId: id }, { status: 'stopping' });
+      // Delay relay cleanup — the server takes several seconds to shut down
+      // (saving worlds, kicking players, etc.) and we want those logs to flow through
+      setTimeout(() => {
+        if (daemonSockets[id]) {
+          daemonSockets[id].socket.disconnect();
+          delete daemonSockets[id];
+        }
+        // Set final offline status after shutdown logs have been captured
+        GameServer.updateOne({ serverId: id }, { status: 'offline' }).catch(() => {});
+      }, 30000);
+    }
+
+    // Auto-deallocation check for stop action
+    if (action === 'stop' && vmNode && isAzureConfigured) {
       setTimeout(async () => {
         try {
-          const statusRes = await fetch(`${nodeUrl}/api/daemon/status`, { headers: { 'x-daemon-secret': DAEMON_SECRET } });
+          const statusRes = await fetch(`${nodeUrl}/api/daemon/status`, {
+            headers: { 'x-daemon-secret': DAEMON_SECRET },
+          });
           const statusData = await statusRes.json();
-          const activeRunningCount = statusData.running ? statusData.running.length : 0;
-          
-          if (activeRunningCount === 0) {
-            console.log(`[Azure Orchestrator] VM ${vmName} has 0 running servers. Triggering cost-saving deallocation...`);
-            await deallocateAzureVM(vmName);
+          const activeCount = statusData.running ? statusData.running.length : 0;
+
+          if (activeCount === 0) {
+            console.log(`[Control] VM ${vmNode.vmName} has 0 running servers. Triggering deallocation...`);
+            const { deallocateAzureVM } = require('./azure-provisioner');
+            await deallocateAzureVM(vmNode.vmName);
             vmNode.status = 'deallocated';
+            vmNode.activeServersCount = 0;
             await vmNode.save();
           }
         } catch (e) {
-          console.error("[Azure Orchestrator] Failed checking daemon for auto-deallocation:", e.message);
+          console.error('[Control] Auto-deallocation check failed:', e.message);
         }
-      }, 10000); // 10s grace period for Java exit
+      }, 45000); // Wait longer than relay cleanup (30s) to ensure logs are captured
     }
 
-    res.status(daemonRes.status).json(data);
-  } catch(e) {
-    res.status(500).json({ error: 'Orchestrator failed: ' + e.message });
+    res.status(dRes.status).json(data);
+  } catch (e) {
+    res.status(500).json({ error: 'Power action failed: ' + e.message });
   }
 });
 
-// --- PERMISSION SHARING ENDPOINTS (OWNER ONLY) ---
+// 4. Delete Server (Async — enqueue job)
+app.delete('/api/servers/:id', protect, checkServerAccess, async (req, res) => {
+  if (req.serverRole !== 'owner') {
+    return res.status(403).json({ error: 'Only the server owner can delete the server.' });
+  }
 
-// 1. Get shared users list
+  try {
+    const job = await orchestrationQueue.add('delete-server', {
+      serverId: req.params.id,
+      userId: req.user._id.toString(),
+    });
+
+    // Mark as deleting
+    await GameServer.updateOne({ serverId: req.params.id }, { status: 'error' });
+
+    console.log(`[Control] Delete job ${job.id} queued for server ${req.params.id}`);
+    res.json({ success: true, jobId: job.id });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to queue deletion: ' + e.message });
+  }
+});
+
+// =============================================
+//  JOB STATUS API
+// =============================================
+
+app.get('/api/jobs/:jobId', protect, async (req, res) => {
+  try {
+    const deployJob = await DeployJob.findOne({
+      jobId: req.params.jobId,
+      userId: req.user._id,
+    });
+
+    if (!deployJob) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    res.json({
+      jobId: deployJob.jobId,
+      type: deployJob.type,
+      status: deployJob.status,
+      progress: deployJob.progress,
+      message: deployJob.message,
+      serverId: deployJob.serverId,
+      region: deployJob.region,
+      result: deployJob.result,
+      error: deployJob.error,
+      createdAt: deployJob.createdAt,
+      updatedAt: deployJob.updatedAt,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// =============================================
+//  DAEMON REGISTRATION & HEARTBEAT (Internal)
+// =============================================
+
+app.post('/api/internal/register', requireSystemSecret, async (req, res) => {
+  const { vmName, region, ip, maxSlots } = req.body;
+
+  try {
+    await VMNode.findOneAndUpdate(
+      { vmName },
+      {
+        ip,
+        region,
+        status: 'running',
+        maxServers: maxSlots || 5,
+        lastHeartbeat: new Date(),
+      },
+      { upsert: true }
+    );
+    console.log(`[Registry] ✅ Daemon registered: ${vmName} (${region}) @ ${ip}`);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(`[Registry] Registration failed:`, err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/internal/heartbeat', requireSystemSecret, async (req, res) => {
+  const { vmName, runningServers, cpuPercent, ramUsedMB } = req.body;
+
+  try {
+    await VMNode.findOneAndUpdate(
+      { vmName },
+      {
+        lastHeartbeat: new Date(),
+        status: 'running',
+        runningServerIds: runningServers || [],
+        activeServersCount: (runningServers || []).length,
+        cpuPercent: cpuPercent || 0,
+        ramUsedMB: ramUsedMB || 0,
+      }
+    );
+
+    // Sync GameServer statuses from heartbeat ground truth
+    if (runningServers && runningServers.length > 0) {
+      await GameServer.updateMany(
+        { serverId: { $in: runningServers }, status: { $in: ['offline', 'deploying'] } },
+        { status: 'online' }
+      );
+    }
+    // Mark servers on this VM that AREN'T running as offline
+    if (vmName) {
+      await GameServer.updateMany(
+        { vmName, status: 'online', serverId: { $nin: runningServers || [] } },
+        { status: 'offline' }
+      );
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(`[Heartbeat] Error:`, err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// =============================================
+//  PERMISSION SHARING ENDPOINTS (OWNER ONLY)
+// =============================================
+
 app.get('/api/servers/:id/permissions', protect, checkServerAccess, async (req, res) => {
   if (req.serverRole !== 'owner') {
     return res.status(403).json({ error: 'Only the server owner can manage permission sharing.' });
@@ -491,7 +475,7 @@ app.get('/api/servers/:id/permissions', protect, checkServerAccess, async (req, 
         userId: p.userId._id,
         name: p.userId.name,
         email: p.userId.email,
-        role: p.role
+        role: p.role,
       }))
     });
   } catch (err) {
@@ -499,7 +483,6 @@ app.get('/api/servers/:id/permissions', protect, checkServerAccess, async (req, 
   }
 });
 
-// 2. Share access with a user
 app.post('/api/servers/:id/permissions', protect, checkServerAccess, async (req, res) => {
   if (req.serverRole !== 'owner') {
     return res.status(403).json({ error: 'Only the server owner can manage permission sharing.' });
@@ -514,7 +497,6 @@ app.post('/api/servers/:id/permissions', protect, checkServerAccess, async (req,
     if (!targetUser) {
       return res.status(404).json({ error: 'No user registered with this email address.' });
     }
-
     if (targetUser._id.toString() === req.user._id.toString()) {
       return res.status(400).json({ error: 'You cannot share access with yourself.' });
     }
@@ -530,7 +512,6 @@ app.post('/api/servers/:id/permissions', protect, checkServerAccess, async (req,
   }
 });
 
-// 3. Revoke access from a user
 app.delete('/api/servers/:id/permissions/:userId', protect, checkServerAccess, async (req, res) => {
   if (req.serverRole !== 'owner') {
     return res.status(403).json({ error: 'Only the server owner can manage permission sharing.' });
@@ -543,23 +524,9 @@ app.delete('/api/servers/:id/permissions/:userId', protect, checkServerAccess, a
   }
 });
 
-
-// 4. Proxy Endpoints for Features (Authenticated & Secured via RBAC)
-const proxyToDaemon = async (req, res, method, endpoint, body) => {
-  const nodeUrl = await getNodeUrlByServerId(req.params.id);
-  try {
-    const opts = { method, headers: { 'x-daemon-secret': DAEMON_SECRET } };
-    if (body) {
-      opts.headers['Content-Type'] = 'application/json';
-      opts.body = JSON.stringify(body);
-    }
-    const dRes = await fetch(`${nodeUrl}${endpoint}`, opts);
-    const data = await dRes.json();
-    res.status(dRes.status).json(data);
-  } catch (e) {
-    res.status(500).json({ error: 'Daemon failed: ' + e.message });
-  }
-};
+// =============================================
+//  PROXY ENDPOINTS (Features → Daemon)
+// =============================================
 
 app.get('/api/servers/:id/players', protect, checkServerAccess, (req, res) => {
   proxyToDaemon(req, res, 'GET', `/api/daemon/players/${req.params.id}`);
@@ -567,13 +534,7 @@ app.get('/api/servers/:id/players', protect, checkServerAccess, (req, res) => {
 
 app.post('/api/servers/:id/players/action', protect, checkServerAccess, requireFullAccess, (req, res) => {
   const { action, playerName } = req.body;
-  // Handle Promote Operator op/deop
-  if (action === 'op' || action === 'deop') {
-    proxyToDaemon(req, res, 'POST', `/api/daemon/command/${req.params.id}`, { command: `${action} ${playerName}` });
-  } else {
-    // Kick or Ban
-    proxyToDaemon(req, res, 'POST', `/api/daemon/command/${req.params.id}`, { command: `${action} ${playerName}` });
-  }
+  proxyToDaemon(req, res, 'POST', `/api/daemon/command/${req.params.id}`, { command: `${action} ${playerName}` });
 });
 
 app.get('/api/servers/:id/stats', protect, checkServerAccess, (req, res) => {
@@ -592,72 +553,7 @@ app.post('/api/servers/:id/settings', protect, checkServerAccess, requireFullAcc
   proxyToDaemon(req, res, 'POST', `/api/daemon/settings/${req.params.id}`, req.body);
 });
 
-// Delete Server Instance
-app.delete('/api/servers/:id', protect, checkServerAccess, async (req, res) => {
-  if (req.serverRole !== 'owner') {
-    return res.status(403).json({ error: 'Only the server owner can delete the server.' });
-  }
-
-  const { id } = req.params;
-  const SERVERS_DIR = path.join(__dirname, 'servers');
-  const serverPath = path.join(SERVERS_DIR, id);
-
-  try {
-    // 1. Force kill the server if running
-    const nodeUrl = await getNodeUrlByServerId(id);
-    try {
-      await fetch(`${nodeUrl}/api/daemon/power/${id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-daemon-secret': DAEMON_SECRET },
-        body: JSON.stringify({ action: 'kill' })
-      });
-      // Give the OS time to release file locks (Java process takes a moment to fully close on Windows)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    } catch (e) {
-      // ignore daemon errors
-    }
-
-    // 2. Delete server folder on VM via daemon
-    try {
-      await fetch(`${nodeUrl}/api/daemon/files/${id}?path=/`, {
-        method: 'DELETE',
-        headers: { 'x-daemon-secret': DAEMON_SECRET }
-      });
-    } catch(e) {}
-
-    // 3. Clear sharing permissions
-    await ServerPermission.deleteMany({ serverId: id });
-
-    // 4. Delete local metadata directory
-    try {
-      if (fs.existsSync(serverPath)) {
-        fs.rmSync(serverPath, { recursive: true, force: true });
-      }
-    } catch (fsErr) {
-      console.warn(`[Control Plane] Could not fully delete directory ${serverPath}, might be locked:`, fsErr.message);
-    }
-
-    // Decrement server count in VMNode
-    let azureLocation = req.serverMeta?.azureLocation;
-    if (!azureLocation && req.serverMeta?.node) {
-      azureLocation = LEGACY_NODE_MAP[req.serverMeta.node] || 'eastus';
-    }
-    if (!azureLocation) azureLocation = 'eastus';
-    
-    const vmName = getVMName(azureLocation);
-    const vmNode = await VMNode.findOne({ vmName });
-    if (vmNode && vmNode.activeServersCount > 0) {
-      vmNode.activeServersCount -= 1;
-      await vmNode.save();
-    }
-
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to delete server: ' + err.message });
-  }
-});
-
-// File Proxy Routes (Full Access Required)
+// File Proxy Routes
 app.get('/api/servers/:id/files', protect, checkServerAccess, requireFullAccess, (req, res) => {
   const pathQuery = req.query.path ? `?path=${encodeURIComponent(req.query.path)}` : '';
   proxyToDaemon(req, res, 'GET', `/api/daemon/files/${req.params.id}${pathQuery}`);
@@ -677,15 +573,15 @@ app.post('/api/servers/:id/files/content', protect, checkServerAccess, requireFu
   proxyToDaemon(req, res, 'POST', `/api/daemon/files/content/${req.params.id}`, req.body);
 });
 
-// Streaming Proxies for large files (Full Access Required)
+// Streaming Proxies for large files
 app.post('/api/servers/:id/files/upload', protect, checkServerAccess, requireFullAccess, async (req, res) => {
-  const nodeUrl = await getNodeUrlByServerId(req.params.id);
+  const nodeUrl = await getNodeUrl(req.gameServer);
   const pathQuery = req.query.path ? `?path=${encodeURIComponent(req.query.path)}` : '';
   try {
     const dRes = await fetch(`${nodeUrl}/api/daemon/files/upload/${req.params.id}${pathQuery}`, {
       method: 'POST',
       headers: { 'x-daemon-secret': DAEMON_SECRET, 'content-type': req.headers['content-type'] },
-      body: req
+      body: req,
     });
     const data = await dRes.json();
     res.status(dRes.status).json(data);
@@ -695,10 +591,12 @@ app.post('/api/servers/:id/files/upload', protect, checkServerAccess, requireFul
 });
 
 app.get('/api/servers/:id/files/download', protect, checkServerAccess, requireFullAccess, async (req, res) => {
-  const nodeUrl = await getNodeUrlByServerId(req.params.id);
+  const nodeUrl = await getNodeUrl(req.gameServer);
   const pathQuery = req.query.path ? `?path=${encodeURIComponent(req.query.path)}` : '';
   try {
-    const dRes = await fetch(`${nodeUrl}/api/daemon/files/download/${req.params.id}${pathQuery}`, { headers: { 'x-daemon-secret': DAEMON_SECRET } });
+    const dRes = await fetch(`${nodeUrl}/api/daemon/files/download/${req.params.id}${pathQuery}`, {
+      headers: { 'x-daemon-secret': DAEMON_SECRET },
+    });
     res.status(dRes.status);
     dRes.headers.forEach((v, n) => res.setHeader(n, v));
     dRes.body.pipe(res);
@@ -707,7 +605,10 @@ app.get('/api/servers/:id/files/download', protect, checkServerAccess, requireFu
   }
 });
 
-// --- SYSTEM ENDPOINTS (for Daemon VM bootstrapping) ---
+// =============================================
+//  SYSTEM ENDPOINTS (Daemon Bootstrapping)
+// =============================================
+
 app.get('/api/system/daemon-script', requireSystemSecret, (req, res) => {
   const daemonPath = path.join(__dirname, 'daemon.js');
   if (!fs.existsSync(daemonPath)) {
@@ -726,9 +627,7 @@ app.get('/api/system/daemon-package', requireSystemSecret, (req, res) => {
   res.send(fs.readFileSync(pkgPath, 'utf8'));
 });
 
-// --- AZURE REGION DISCOVERY ---
-// Returns a curated list of regions known to work on restricted Azure subscriptions.
-// The backend will auto-fallback if the chosen region is blocked by policy.
+// Azure Region Discovery
 app.get('/api/system/azure-regions', protect, async (req, res) => {
   if (!isAzureConfigured) {
     return res.json({ regions: [] });
@@ -736,47 +635,233 @@ app.get('/api/system/azure-regions', protect, async (req, res) => {
   res.json({ regions: SAFE_REGION_METADATA });
 });
 
-// --- BACKGROUND IDLE VM COST-SAVING CHECK ---
-// Every 5 minutes, query all running VM nodes. If a node reports 0 active running servers
-// via its daemon, deallocate it to stop Azure billing for compute hours.
-const IDLE_CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
-setInterval(async () => {
-  if (!isAzureConfigured) return;
-
+// Console history fetch (HTTP fallback — doesn't require Socket.IO relay)
+app.get('/api/servers/:id/console', protect, checkServerAccess, async (req, res) => {
+  const gs = req.gameServer;
   try {
-    const runningNodes = await VMNode.find({ status: 'running' });
-    for (const vmNode of runningNodes) {
-      try {
-        const nodeUrl = `http://${vmNode.ip}:4000`;
-        const statusRes = await fetch(`${nodeUrl}/api/daemon/status`, {
-          headers: { 'x-daemon-secret': DAEMON_SECRET }
-        });
-        const statusData = await statusRes.json();
-        const activeRunningCount = statusData.running ? statusData.running.length : 0;
+    const nodeUrl = await getNodeUrl(gs);
+    const dRes = await fetch(`${nodeUrl}/api/daemon/console/${req.params.id}`, {
+      headers: { 'x-daemon-secret': DAEMON_SECRET },
+    });
+    const data = await dRes.json();
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch console: ' + e.message, logs: '' });
+  }
+});
 
-        if (activeRunningCount === 0) {
-          console.log(`[Azure Orchestrator] Background check: VM ${vmNode.vmName} has 0 running servers. Deallocating...`);
-          await deallocateAzureVM(vmNode.vmName);
-          vmNode.status = 'deallocated';
-          await vmNode.save();
-        }
-      } catch (err) {
-        // If daemon is unreachable, we can't safely deallocate (might be transient network issue)
-        console.error(`[Azure Orchestrator] Background check failed for ${vmNode.vmName}:`, err.message);
+// =============================================
+//  ADMIN CLEANUP ENDPOINTS
+// =============================================
+
+// Kill all running server processes across all VMs and reset statuses
+app.post('/api/admin/kill-all', protect, async (req, res) => {
+  try {
+    const vmNodes = await VMNode.find({ status: { $in: ['running', 'unhealthy'] } });
+    const results = [];
+
+    for (const vm of vmNodes) {
+      try {
+        const dRes = await fetch(`http://${vm.ip}:4000/api/daemon/kill-all`, {
+          method: 'POST',
+          headers: { 'x-daemon-secret': DAEMON_SECRET },
+        });
+        const data = await dRes.json();
+        results.push({ vm: vm.vmName, killed: data.killed || [] });
+      } catch (e) {
+        results.push({ vm: vm.vmName, error: e.message });
       }
     }
-  } catch (err) {
-    console.error('[Azure Orchestrator] Background idle check error:', err.message);
-  }
-}, IDLE_CHECK_INTERVAL_MS);
 
-// --- FRONTEND DELIVERY ---
+    // Reset all server statuses to offline
+    await GameServer.updateMany(
+      { status: { $in: ['online', 'starting', 'stopping'] } },
+      { status: 'offline' }
+    );
+
+    // Reset VM running server lists
+    await VMNode.updateMany({}, { runningServerIds: [], activeServersCount: 0 });
+
+    console.log(`[Admin] Kill-all completed:`, results);
+    res.json({ success: true, results });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Remove orphaned GameServer records (deleted from UI but process was never killed)
+app.post('/api/admin/cleanup', protect, async (req, res) => {
+  try {
+    // Delete all GameServer records that have status 'error' or no vmName
+    const orphans = await GameServer.find({
+      $or: [
+        { status: 'error' },
+        { status: 'queued', deployJobId: { $exists: true } },
+      ]
+    });
+
+    const deletedIds = orphans.map(gs => gs.serverId);
+    if (deletedIds.length > 0) {
+      await GameServer.deleteMany({ serverId: { $in: deletedIds } });
+      await ServerPermission.deleteMany({ serverId: { $in: deletedIds } });
+    }
+
+    console.log(`[Admin] Cleanup: removed ${deletedIds.length} orphaned servers`);
+    res.json({ success: true, cleaned: deletedIds });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// =============================================
+//  FRONTEND DELIVERY
+// =============================================
+
 app.use(express.static(path.join(__dirname, '../dist')));
 app.get(/^(.*)$/, (req, res) => {
   res.sendFile(path.join(__dirname, '../dist', 'index.html'));
 });
 
+// =============================================
+//  SOCKET.IO RELAY (Control Plane → Daemon)
+// =============================================
+
+// Track active daemon connections per server so we don't duplicate
+const daemonSockets = {}; // { serverId: { socket, refCount } }
+
+/**
+ * Tries to establish a Socket.IO relay connection to the daemon for a given server.
+ * Called when a browser client joins a server room, or after a power action starts a server.
+ * Accepts VM status 'running' or 'starting' so the relay connects during boot.
+ */
+async function tryEstablishDaemonRelay(serverId, notifySocket) {
+  try {
+    const gs = await GameServer.findOne({ serverId });
+    if (!gs || !gs.vmName) {
+      if (notifySocket) notifySocket.emit('console-log', '[System] Server not found or not deployed yet.\r\n');
+      return;
+    }
+
+    const vmNode = await VMNode.findOne({ vmName: gs.vmName });
+    // Accept both 'running' and 'starting' — daemon may already be up during starting phase
+    if (!vmNode || !vmNode.ip || !['running', 'starting'].includes(vmNode.status)) {
+      if (notifySocket) notifySocket.emit('console-log', '[System] VM is not running. Start the server first.\r\n');
+      return;
+    }
+
+    // Reuse existing daemon connection if already established
+    if (daemonSockets[serverId]) {
+      daemonSockets[serverId].refCount++;
+      console.log(`[Socket.IO] Reusing daemon connection for ${serverId} (refs: ${daemonSockets[serverId].refCount})`);
+      return;
+    }
+
+    const daemonUrl = `http://${vmNode.ip}:4000`;
+    console.log(`[Socket.IO] Establishing relay to daemon at ${daemonUrl} for server ${serverId}...`);
+
+    // Connect to the remote daemon's Socket.IO
+    const daemonSocket = ioClient(daemonUrl, {
+      extraHeaders: { 'x-daemon-secret': DAEMON_SECRET },
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 2000,
+      timeout: 10000,
+    });
+
+    daemonSockets[serverId] = { socket: daemonSocket, refCount: 1 };
+
+    daemonSocket.on('connect', () => {
+      console.log(`[Socket.IO] Connected to daemon at ${daemonUrl} for server ${serverId}`);
+      daemonSocket.emit('join-server', serverId);
+    });
+
+    // Relay daemon events to all browser clients in this server room
+    daemonSocket.on('console-history', (data) => {
+      io.to(`server-${serverId}`).emit('console-history', data);
+    });
+
+    daemonSocket.on('console-log', (data) => {
+      io.to(`server-${serverId}`).emit('console-log', data);
+    });
+
+    daemonSocket.on('console-error', (data) => {
+      io.to(`server-${serverId}`).emit('console-error', data);
+    });
+
+    daemonSocket.on('status-update', (data) => {
+      io.to(`server-${serverId}`).emit('status-update', data);
+      // Sync daemon status back to DB (e.g. 'offline' when process exits)
+      if (data === 'offline' || data === 'online') {
+        GameServer.updateOne({ serverId }, { status: data }).catch(() => {});
+      }
+    });
+
+    daemonSocket.on('connect_error', (err) => {
+      console.error(`[Socket.IO] Daemon connection error for ${serverId}:`, err.message);
+    });
+
+    daemonSocket.on('disconnect', (reason) => {
+      console.log(`[Socket.IO] Daemon disconnected for ${serverId}: ${reason}`);
+    });
+
+  } catch (err) {
+    console.error(`[Socket.IO] Error setting up relay for ${serverId}:`, err.message);
+    if (notifySocket) notifySocket.emit('console-error', `[System] Failed to connect to server: ${err.message}\r\n`);
+  }
+}
+
+io.on('connection', (socket) => {
+  console.log('[Socket.IO] Client connected:', socket.id);
+
+  socket.on('join-server', async (serverId) => {
+    socket.join(`server-${serverId}`);
+    console.log(`[Socket.IO] Client ${socket.id} joined server-${serverId}`);
+
+    // Try to establish daemon relay (may fail if VM not ready yet)
+    await tryEstablishDaemonRelay(serverId, socket);
+  });
+
+
+  // Relay commands from browser to daemon
+  socket.on('send-command', async ({ serverId, command }) => {
+    if (daemonSockets[serverId]?.socket?.connected) {
+      daemonSockets[serverId].socket.emit('send-command', { serverId, command });
+    } else {
+      // Fallback: use HTTP API
+      try {
+        const gs = await GameServer.findOne({ serverId });
+        if (gs) {
+          const nodeUrl = await getNodeUrl(gs);
+          await fetch(`${nodeUrl}/api/daemon/command/${serverId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-daemon-secret': DAEMON_SECRET },
+            body: JSON.stringify({ command }),
+          });
+        }
+      } catch (err) {
+        socket.emit('console-error', `[System] Failed to send command: ${err.message}\r\n`);
+      }
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('[Socket.IO] Client disconnected:', socket.id);
+    // Clean up daemon connections with no more clients
+    // Check which server rooms this socket was in
+    for (const [serverId, entry] of Object.entries(daemonSockets)) {
+      const room = io.sockets.adapter.rooms.get(`server-${serverId}`);
+      const clientsLeft = room ? room.size : 0;
+      if (clientsLeft === 0) {
+        console.log(`[Socket.IO] No clients left for ${serverId}. Disconnecting daemon relay.`);
+        entry.socket.disconnect();
+        delete daemonSockets[serverId];
+      }
+    }
+  });
+});
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`CraftHost Control Plane (API) running on port ${PORT}`);
+  console.log(`🚀 CraftHost Control Plane running on port ${PORT}`);
+  console.log(`   Mode: ${isAzureConfigured ? 'Azure Cloud' : 'Local Development'}`);
 });

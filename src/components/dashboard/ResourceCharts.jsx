@@ -18,7 +18,7 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null
 }
 
-export default function ResourceCharts({ server }) {
+export default function ResourceCharts({ server, visible = false }) {
   const { getAuthHeaders, API_BASE } = useApp();
   const [data, setData] = useState(Array.from({ length: 20 }, (_, i) => ({ time: `-${20 - i}s`, cpu: 0, ram: 0 })));
   const [currentCpu, setCurrentCpu] = useState(0);
@@ -26,6 +26,7 @@ export default function ResourceCharts({ server }) {
 
   useEffect(() => {
     let isInitialFetch = true;
+    if (!visible) return;
     if (server.status !== 'online' && server.status !== 'starting') return;
 
     const fetchStats = async () => {
@@ -70,7 +71,7 @@ export default function ResourceCharts({ server }) {
             return next.map((d, i) => ({ ...d, time: `-${(19 - i) * 2}s` }));
           });
         }
-      } catch (err) {
+      } catch {
         // ignore
       }
     };
@@ -79,7 +80,8 @@ export default function ResourceCharts({ server }) {
 
     const interval = setInterval(fetchStats, 2000);
     return () => clearInterval(interval);
-  }, [server.id, server.status]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [server.id, server.status, visible]);
 
   return (
     <div className="resource-charts">

@@ -6,7 +6,17 @@ import './ServerCard.css'
 export default function ServerCard({ server }) {
   const { toggleServerStatus } = useApp()
   const isOnline = server.status === 'online'
-  const isStarting = server.status === 'starting'
+  const isTransitioning = ['starting', 'stopping', 'queued', 'provisioning', 'deploying'].includes(server.status)
+
+  const statusLabel = {
+    online: 'Online',
+    starting: 'Starting...',
+    stopping: 'Stopping...',
+    queued: 'Queued...',
+    provisioning: 'Provisioning...',
+    deploying: 'Deploying...',
+    offline: 'Offline',
+  }[server.status] || server.status
 
   const safePlayers = server.players || '0/20';
   const safeRam = server.ram || '0GB / 4GB';
@@ -19,22 +29,28 @@ export default function ServerCard({ server }) {
   const ramPercent = ramArr.length === 2 ? (parseFloat(ramArr[0].replace('GB', '')) / parseFloat(ramArr[1].replace('GB', ''))) * 100 : 0;
 
   return (
-    <div className={`server-card card ${isStarting ? 'starting-animation' : ''}`}>
+    <div className={`server-card card ${isTransitioning ? 'starting-animation' : ''}`}>
       <div className="server-card-header">
         <div className="server-info">
-          <div className={`status-indicator ${isOnline ? 'status-online' : isStarting ? 'status-warning' : 'status-offline'}`}>
-            {isStarting && <RotateCcw size={10} className="spin" />}
+          <div className={`status-indicator ${isOnline ? 'status-online' : isTransitioning ? 'status-warning' : 'status-offline'}`}>
+            {isTransitioning && <RotateCcw size={10} className="spin" />}
           </div>
           <div>
             <h3 className="server-name">{server.name}</h3>
             <div className="server-ip">
-              <span>{server.ip ? (server.port ? `${server.ip}:${server.port}` : server.ip) : 'Provisioning...'}</span>
+              <span>{(() => {
+                if (!server.ip) return 'Provisioning...';
+                const host = server.hostname || server.ip;
+                return server.port ? `${host}:${server.port}` : host;
+              })()}</span>
               <button 
                 className="btn-icon btn-ghost btn-xs copy-btn"
                 onClick={() => {
-                  const ipText = server.ip ? (server.port ? `${server.ip}:${server.port}` : server.ip) : '';
-                  if (ipText) navigator.clipboard.writeText(ipText);
-                  alert("Copied IP to clipboard!");
+                  if (!server.ip) return;
+                  const host = server.hostname || server.ip;
+                  const addr = server.port ? `${host}:${server.port}` : host;
+                  navigator.clipboard.writeText(addr);
+                  alert("Copied to clipboard!");
                 }}
               >
                 <Copy size={12} />
@@ -94,7 +110,7 @@ export default function ServerCard({ server }) {
         <div className="action-group">
           <button 
              className={`btn ${isOnline ? 'btn-secondary' : 'btn-primary'} btn-sm flex-1`}
-             disabled={isOnline || isStarting}
+             disabled={isOnline || isTransitioning}
              onClick={() => toggleServerStatus(server.id, 'start')}
            >
             <Play size={14} />
@@ -102,7 +118,7 @@ export default function ServerCard({ server }) {
           </button>
           <button 
             className="btn btn-secondary btn-sm flex-1" 
-            disabled={!isOnline && !isStarting}
+            disabled={!isOnline && !isTransitioning}
             onClick={() => toggleServerStatus(server.id, 'stop')}
           >
             <Square size={14} />

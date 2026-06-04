@@ -4,7 +4,7 @@ import { Search, Shield, UserMinus, UserX } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import './PlayerList.css'
 
-export default function PlayerList() {
+export default function PlayerList({ visible = false }) {
   const { id } = useParams()
   const { getAuthHeaders, API_BASE, servers } = useApp()
   const [players, setPlayers] = useState([])
@@ -29,18 +29,21 @@ export default function PlayerList() {
         const data = await res.json()
         setPlayers(data.players || [])
       }
-    } catch (err) {
-      console.error("Failed fetching players", err)
+    } catch {
+      console.error("Failed fetching players")
     } finally {
       setLoading(false)
     }
   }
 
+  // Only poll when tab is visible — prevents constant RCON connect/disconnect spam
   useEffect(() => {
+    if (!visible) return
     fetchPlayers()
-    const interval = setInterval(fetchPlayers, 5000)
+    const interval = setInterval(fetchPlayers, 10000)
     return () => clearInterval(interval)
-  }, [id, isOnline])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, isOnline, visible])
 
   const handleAction = async (playerName, action) => {
     if (!confirm(`Are you sure you want to ${action} ${playerName}?`)) return
@@ -52,8 +55,8 @@ export default function PlayerList() {
         body: JSON.stringify({ playerName, action })
       })
       fetchPlayers()
-    } catch (err) {
-      console.error(`Failed to ${action} player`, err)
+    } catch {
+      console.error(`Failed to ${action} player`)
       alert(`Failed to ${action}`)
     }
   }
@@ -125,22 +128,44 @@ export default function PlayerList() {
                     {player.ping}ms
                   </span>
                 </td>
-                <td className="player-actions text-right">
-                  {player.isOp ? (
-                    <button className="btn-icon btn-ghost btn-xs text-warning" title="Deop (Remove Admin)" onClick={() => handleAction(player.name, 'deop')}>
-                      <Shield size={14} style={{ fill: 'currentColor' }} />
+                <td>
+                  <div className="player-actions">
+                    {player.isOp ? (
+                      <button 
+                        className="player-action-btn deop" 
+                        title="Remove Operator"
+                        onClick={() => handleAction(player.name, 'deop')}
+                      >
+                        <Shield size={12} style={{ fill: 'currentColor' }} />
+                        <span>Deop</span>
+                      </button>
+                    ) : (
+                      <button 
+                        className="player-action-btn op" 
+                        title="Make Operator"
+                        onClick={() => handleAction(player.name, 'op')}
+                      >
+                        <Shield size={12} />
+                        <span>Op</span>
+                      </button>
+                    )}
+                    <button 
+                      className="player-action-btn kick" 
+                      title="Kick Player"
+                      onClick={() => handleAction(player.name, 'kick')}
+                    >
+                      <UserMinus size={12} />
+                      <span>Kick</span>
                     </button>
-                  ) : (
-                    <button className="btn-icon btn-ghost btn-xs text-primary" title="Op (Make Admin)" onClick={() => handleAction(player.name, 'op')}>
-                      <Shield size={14} />
+                    <button 
+                      className="player-action-btn ban" 
+                      title="Ban Player"
+                      onClick={() => handleAction(player.name, 'ban')}
+                    >
+                      <UserX size={12} />
+                      <span>Ban</span>
                     </button>
-                  )}
-                  <button className="btn-icon btn-ghost btn-xs text-warning" title="Kick" onClick={() => handleAction(player.name, 'kick')}>
-                    <UserMinus size={14} />
-                  </button>
-                  <button className="btn-icon btn-ghost btn-xs text-danger" title="Ban" onClick={() => handleAction(player.name, 'ban')}>
-                    <UserX size={14} />
-                  </button>
+                  </div>
                 </td>
               </tr>
             ))}

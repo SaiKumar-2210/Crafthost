@@ -36,12 +36,16 @@ export default function ServerSettings() {
       }
     }
     fetchSettings()
+    // getAuthHeaders and API_BASE are stable from context; intentionally omitting
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   useEffect(() => {
     if (activeTab === 'access') {
       fetchPermissions()
     }
+    // fetchPermissions is defined in this scope; intentionally omitting from deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, id])
 
   const fetchPermissions = async () => {
@@ -52,8 +56,8 @@ export default function ServerSettings() {
         const data = await res.json()
         setPermissions(data.permissions || [])
       }
-    } catch (err) {
-      console.error(err)
+    } catch {
+      console.error('fetchPermissions failed')
     } finally {
       setLoadingPerms(false)
     }
@@ -77,7 +81,7 @@ export default function ServerSettings() {
         const data = await res.json()
         alert(data.error || 'Failed to share access')
       }
-    } catch (err) {
+    } catch {
       alert('Error sharing access')
     }
   }
@@ -95,7 +99,7 @@ export default function ServerSettings() {
         const data = await res.json()
         alert(data.error || 'Failed to revoke access')
       }
-    } catch (err) {
+    } catch {
       alert('Error revoking access')
     }
   }
@@ -136,7 +140,8 @@ export default function ServerSettings() {
         alert("Settings saved successfully." + (isOnline ? " Applied live to running server." : " Restart the server for changes to take effect."))
       }
     } catch (err) {
-      alert('Failed to save settings: ' + err.message)
+      // If we have an error object use it, otherwise show generic
+      alert('Failed to save settings' + (err && err.message ? (': ' + err.message) : '.'))
     } finally {
       setSaving(false)
     }
@@ -161,7 +166,7 @@ export default function ServerSettings() {
         alert("Failed to delete server.");
       }
     } catch (err) {
-      alert("Error: " + err.message);
+      alert("Error: " + (err && err.message ? err.message : 'Unknown'));
     } finally {
       setDeleting(false);
     }

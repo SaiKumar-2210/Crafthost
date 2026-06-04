@@ -1,4 +1,6 @@
-import { createContext, useState, useContext, useEffect } from 'react'
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useState, useContext, useEffect, useRef } from 'react'
+import { io } from 'socket.io-client'
 
 const AppContext = createContext()
 const API_BASE = '/api'
@@ -50,6 +52,13 @@ export function AppProvider({ children }) {
 
   // --- Servers State ---
   const [servers, setServers] = useState([])
+  const socketRef = useRef(null)
+  const serversRef = useRef([])
+
+  // Keep serversRef in sync so socket callbacks see latest server list
+  useEffect(() => {
+    serversRef.current = servers
+  }, [servers])
 
   const getAuthHeaders = () => {
     return {
@@ -67,16 +76,73 @@ export function AppProvider({ children }) {
       })
       const data = await res.json()
       setServers(data.servers || [])
-    } catch (e) {
-      console.error("Failed to fetch servers", e)
+    } catch {
+      console.error("Failed to fetch servers")
     }
   }
 
   useEffect(() => {
     fetchServers()
-    const interval = setInterval(fetchServers, 3000)
+    const interval = setInterval(fetchServers, 5000)
     return () => clearInterval(interval)
   }, [user])
+
+  // --- Global Socket.IO for real-time status updates ---
+  useEffect(() => {
+    if (!user) {
+      // Cleanup socket on logout
+      if (socketRef.current) {
+        socketRef.current.close()
+        socketRef.current = null
+      }
+      return
+    }
+
+    const socket = io('/', {
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 2000,
+      timeout: 10000,
+    })
+    socketRef.current = socket
+
+    // Join all server rooms so we get status-update events
+    const joinAllServers = () => {
+      const currentServers = serversRef.current
+      currentServers.forEach(s => {
+        socket.emit('join-server', s.id)
+      })
+    }
+
+    // 'connect' fires on both initial connection AND reconnection in Socket.IO v4
+    socket.on('connect', () => {
+      console.log('[AppContext] Socket.IO connected')
+      joinAllServers()
+    })
+
+    // When daemon reports server online/offline, update immediately
+    socket.on('status-update', () => {
+      fetchServers()
+    })
+
+    return () => {
+      socket.close()
+      socketRef.current = null
+    }
+  }, [user])
+
+  // Join new server rooms when server list changes (e.g., after deploy)
+  const joinedServersRef = useRef(new Set())
+  useEffect(() => {
+    if (socketRef.current?.connected && servers.length > 0) {
+      servers.forEach(s => {
+        if (!joinedServersRef.current.has(s.id)) {
+          socketRef.current.emit('join-server', s.id)
+          joinedServersRef.current.add(s.id)
+        }
+      })
+    }
+  }, [servers])
 
   // --- Actions ---
   const deployServer = async (name, version, azureLocation) => {
@@ -91,15 +157,45 @@ export function AppProvider({ children }) {
           azureLocation: azureLocation || 'eastus'
         })
       });
+      const data = await res.json();
       if (!res.ok) {
-        const errData = await res.json();
-        alert(`Deployment Error: ${errData.error || 'Unknown network error'}`);
-        return;
+        return { error: data.error || 'Deployment failed' };
       }
-      await fetchServers()
+      return data; // { jobId, message }
     } catch (e) {
-      console.error("Deploy failed", e)
-      alert("Deployment network connection failed.");
+      console.error("Deploy failed", e);
+      return { error: 'Network connection failed' };
+    }
+  }
+
+  const getJobStatus = async (jobId) => {
+    try {
+      const res = await fetch(`${API_BASE}/jobs/${jobId}`, {
+        headers: getAuthHeaders()
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  const deleteServer = async (serverId) => {
+    try {
+      const res = await fetch(`${API_BASE}/servers/${serverId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Delete failed');
+        return false;
+      }
+      await fetchServers();
+      return true;
+    } catch (e) {
+      alert('Network failed');
+      return false;
     }
   }
 
@@ -121,18 +217,25 @@ export function AppProvider({ children }) {
       if (!res.ok) {
         const errData = await res.json();
         alert(`Server Error: ${errData.error || 'Unknown command rejection'}`);
+        // Fetch immediately on error to get correct status
+        await fetchServers()
+        return
       }
-      await fetchServers()
+      // Delay the fetch so the backend has time to update the DB status.
+      // Without this delay, fetchServers() returns stale 'offline' data
+      // and overwrites our optimistic 'starting' status.
+      setTimeout(fetchServers, 3000)
     } catch (e) {
       console.error("Power action failed", e)
       alert("Network failed to dispatch server command");
+      await fetchServers()
     }
   }
 
   return (
     <AppContext.Provider value={{ 
       user, loading, login, logout,
-      servers, deployServer, toggleServerStatus,
+      servers, deployServer, toggleServerStatus, deleteServer, getJobStatus,
       getAuthHeaders, API_BASE
     }}>
       {children}

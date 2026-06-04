@@ -32,7 +32,7 @@ export default function ServerPanel() {
   }
 
   const isOnline = server.status === 'online'
-  const isStarting = server.status === 'starting'
+  const isTransitioning = ['starting', 'stopping', 'queued', 'provisioning', 'deploying'].includes(server.status)
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Cpu },
@@ -58,7 +58,7 @@ export default function ServerPanel() {
           <div className="server-critical-actions">
              <button 
                className="btn btn-secondary btn-sm" 
-               disabled={isOnline || isStarting}
+               disabled={isOnline || isTransitioning}
                onClick={() => toggleServerStatus(server.id, 'start')}
              >
               <Play size={14} />
@@ -66,7 +66,7 @@ export default function ServerPanel() {
             </button>
             <button 
               className="btn btn-secondary btn-sm" 
-              disabled={!isOnline && !isStarting}
+              disabled={!isOnline && !isTransitioning}
               onClick={() => toggleServerStatus(server.id, 'stop')}
             >
               <Square size={14} />
@@ -87,28 +87,32 @@ export default function ServerPanel() {
           {/* Server Info Bar */}
           <div className="server-info-banner card">
             <div className="info-primary">
-              <div className={`status-pulse ${isOnline ? 'pulse-online' : isStarting ? 'pulse-warning' : ''}`} />
+              <div className={`status-pulse ${isOnline ? 'pulse-online' : isTransitioning ? 'pulse-warning' : ''}`} />
               <div>
                 <h1 className="server-banner-name">{server.name}</h1>
                 <div className="server-banner-ip">
-                  <span>{server.ip ? (server.port ? `${server.ip}:${server.port}` : server.ip) : 'Provisioning...'}</span>
+                  <span>{(() => {
+                    if (!server.ip) return 'Provisioning...';
+                    const host = server.hostname || server.ip;
+                    return server.port ? `${host}:${server.port}` : host;
+                  })()}</span>
                   <button 
                     className="btn-icon btn-ghost btn-xs"
                     onClick={() => {
-                      const ipText = server.ip ? (server.port ? `${server.ip}:${server.port}` : server.ip) : '';
-                      if (ipText) {
-                        if (navigator.clipboard && window.isSecureContext) {
-                          navigator.clipboard.writeText(ipText);
-                        } else {
-                          const textArea = document.createElement("textarea");
-                          textArea.value = ipText;
-                          document.body.appendChild(textArea);
-                          textArea.select();
-                          try { document.execCommand('copy'); } catch (e) {}
-                          document.body.removeChild(textArea);
-                        }
-                        alert("Copied IP to clipboard!");
+                      if (!server.ip) return;
+                      const host = server.hostname || server.ip;
+                      const addr = server.port ? `${host}:${server.port}` : host;
+                      if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(addr);
+                      } else {
+                        const textArea = document.createElement("textarea");
+                        textArea.value = addr;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        try { document.execCommand('copy'); } catch { }
+                        document.body.removeChild(textArea);
                       }
+                      alert("Copied to clipboard!");
                     }}
                   >
                     <Copy size={12} />
@@ -150,13 +154,23 @@ export default function ServerPanel() {
             })}
           </div>
 
-          {/* Tab Content Area */}
+          {/* Tab Content Area — all panels stay mounted, only active one visible */}
           <div className="tab-content-area">
-            {activeTab === 'overview' && <ResourceCharts server={server} />}
-            {activeTab === 'console' && <ConsoleTerminal />}
-            {activeTab === 'files' && <FileManager />}
-            {activeTab === 'players' && <PlayerList />}
-            {activeTab === 'settings' && <ServerSettings />}
+            <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
+              <ResourceCharts server={server} visible={activeTab === 'overview'} />
+            </div>
+            <div style={{ display: activeTab === 'console' ? 'block' : 'none' }}>
+              <ConsoleTerminal />
+            </div>
+            <div style={{ display: activeTab === 'files' ? 'block' : 'none' }}>
+              <FileManager />
+            </div>
+            <div style={{ display: activeTab === 'players' ? 'block' : 'none' }}>
+              <PlayerList visible={activeTab === 'players'} />
+            </div>
+            <div style={{ display: activeTab === 'settings' ? 'block' : 'none' }}>
+              <ServerSettings />
+            </div>
           </div>
         </div>
       </div>

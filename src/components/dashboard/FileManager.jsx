@@ -38,6 +38,8 @@ export default function FileManager() {
   }
 
   useEffect(() => {
+    // fetchFiles is stable in this component scope; intentionally omitting it from deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     fetchFiles('/')
   }, [id])
 
@@ -65,8 +67,8 @@ export default function FileManager() {
         headers: getAuthHeaders()
       })
       fetchFiles()
-    } catch (err) {
-      console.error(err)
+    } catch {
+      console.error('deleteFile failed')
     }
   }
 
@@ -84,8 +86,8 @@ export default function FileManager() {
       } else {
         alert("Cannot read this file (might be binary)")
       }
-    } catch (err) {
-      console.error(err)
+    } catch {
+      console.error('openEditor failed')
     }
   }
 
@@ -98,7 +100,7 @@ export default function FileManager() {
         body: JSON.stringify({ path: editingFile, content: fileContent })
       })
       setEditingFile(null)
-    } catch (err) {
+    } catch {
       alert("Save failed")
     } finally {
       setSaving(false)
@@ -119,8 +121,8 @@ export default function FileManager() {
         body: formData
       })
       fetchFiles()
-    } catch (err) {
-      console.error(err)
+    } catch {
+      console.error('upload failed')
       alert("Upload failed")
     }
   }
@@ -147,8 +149,8 @@ export default function FileManager() {
       } else {
         alert("Download failed on backend.")
       }
-    } catch (err) {
-      console.error(err)
+    } catch {
+      console.error('download failed')
       alert("Download failed")
     } finally {
       setLoading(false)

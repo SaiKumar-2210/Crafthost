@@ -1,21 +1,32 @@
 {
   "name": "backend",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "2.0.0",
+  "description": "CraftHost — Event-Driven Auto-Scaling Minecraft Hosting Platform",
+  "main": "control.js",
   "scripts": {
+    "start": "node control.js",
+    "scheduler": "node scheduler.js",
+    "dev": "concurrently \"node control.js\" \"node scheduler.js\"",
+    "clear-queue": "node clear-queue.js",
+    "cleanup-azure": "node scripts/cleanup-azure.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "SaiKumar-2210",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@azure/arm-compute": "^22.3.0",
+    "@azure/arm-network": "^32.1.0",
+    "@azure/arm-subscriptions": "^5.1.0",
+    "@azure/identity": "^4.5.0",
     "archiver": "^7.0.1",
     "bcryptjs": "^3.0.3",
+    "bullmq": "^5.34.8",
     "cors": "^2.8.6",
     "dotenv": "^16.4.5",
     "express": "^5.2.1",
+    "ioredis": "^5.6.1",
     "jsonwebtoken": "^9.0.3",
     "minecraft-server-util": "^5.4.4",
     "mongoose": "^9.4.1",
@@ -23,9 +34,9 @@
     "node-fetch": "^3.3.2",
     "pidusage": "^4.0.1",
     "socket.io": "^4.8.3",
-    "@azure/arm-compute": "^22.3.0",
-    "@azure/arm-network": "^32.1.0",
-    "@azure/arm-subscriptions": "^5.1.0",
-    "@azure/identity": "^4.5.0"
+    "socket.io-client": "^4.8.3"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }

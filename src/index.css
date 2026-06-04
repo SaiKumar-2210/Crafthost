@@ -259,6 +259,43 @@ input, textarea, select {
   border-radius: var(--radius-md);
 }
 
+.btn-xs {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: var(--text-xs);
+}
+
+.btn-xs.btn-icon {
+  width: 28px;
+  height: 28px;
+}
+
+/* ---------- Text Color Utilities ---------- */
+.text-primary {
+  color: var(--accent-primary) !important;
+}
+
+.text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.text-warning {
+  color: var(--status-warning) !important;
+}
+
+.text-danger {
+  color: var(--status-danger) !important;
+}
+
+.text-error {
+  color: var(--status-danger) !important;
+}
+
+.text-success {
+  color: var(--status-online) !important;
+}
+
 /* ---------- Card System ---------- */
 .card {
   background: var(--bg-card);
