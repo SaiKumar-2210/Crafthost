@@ -632,7 +632,22 @@ app.get('/api/system/azure-regions', protect, async (req, res) => {
   if (!isAzureConfigured) {
     return res.json({ regions: [] });
   }
-  res.json({ regions: SAFE_REGION_METADATA });
+  try {
+    // Only return regions where we have provisioned VM nodes
+    const activeRegions = await VMNode.distinct('region');
+    const availableRegions = SAFE_REGION_METADATA.filter(r => activeRegions.includes(r.value));
+    
+    // Fallback if none found (e.g. before initial sync), show what we statically expect
+    if (availableRegions.length === 0) {
+      const fallbackRegions = SAFE_REGION_METADATA.filter(r => ['centralindia', 'koreacentral'].includes(r.value));
+      return res.json({ regions: fallbackRegions });
+    }
+
+    res.json({ regions: availableRegions });
+  } catch (error) {
+    console.error('Error fetching available regions:', error);
+    res.status(500).json({ error: 'Failed to fetch regions' });
+  }
 });
 
 // Console history fetch (HTTP fallback — doesn't require Socket.IO relay)
