@@ -34,6 +34,16 @@ export default function ServerPanel() {
   const isOnline = server.status === 'online'
   const isTransitioning = ['starting', 'stopping', 'queued', 'provisioning', 'deploying'].includes(server.status)
 
+  const statusLabel = {
+    online: 'Online',
+    starting: 'Starting VM / Server...',
+    stopping: 'Stopping...',
+    queued: 'Queued...',
+    provisioning: 'Provisioning...',
+    deploying: 'Deploying...',
+    offline: 'Offline',
+  }[server.status] || server.status
+
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Cpu },
     { id: 'console', label: 'Console', icon: Terminal },
@@ -89,7 +99,12 @@ export default function ServerPanel() {
             <div className="info-primary">
               <div className={`status-pulse ${isOnline ? 'pulse-online' : isTransitioning ? 'pulse-warning' : ''}`} />
               <div>
-                <h1 className="server-banner-name">{server.name}</h1>
+                <h1 className="server-banner-name" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {server.name}
+                  <span className={`badge ${isOnline ? 'badge-success' : isTransitioning ? 'badge-warning' : 'badge-neutral'}`} style={{ fontSize: '0.85rem', fontWeight: '500', padding: '4px 8px' }}>
+                    {statusLabel}
+                  </span>
+                </h1>
                 <div className="server-banner-ip">
                   <span>{(() => {
                     if (!server.ip) return 'Provisioning...';

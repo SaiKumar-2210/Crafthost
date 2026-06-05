@@ -10,7 +10,7 @@ export default function ServerCard({ server }) {
 
   const statusLabel = {
     online: 'Online',
-    starting: 'Starting...',
+    starting: 'Starting VM / Server...',
     stopping: 'Stopping...',
     queued: 'Queued...',
     provisioning: 'Provisioning...',
@@ -36,7 +36,12 @@ export default function ServerCard({ server }) {
             {isTransitioning && <RotateCcw size={10} className="spin" />}
           </div>
           <div>
-            <h3 className="server-name">{server.name}</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h3 className="server-name" style={{ margin: 0 }}>{server.name}</h3>
+              <span className={`badge ${isOnline ? 'badge-success' : isTransitioning ? 'badge-warning' : 'badge-neutral'}`} style={{ fontSize: '0.7rem', padding: '2px 6px' }}>
+                {statusLabel}
+              </span>
+            </div>
             <div className="server-ip">
               <span>{(() => {
                 if (!server.ip) return 'Provisioning...';
