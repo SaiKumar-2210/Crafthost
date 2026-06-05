@@ -21,7 +21,8 @@ export default function AdminPanel() {
 
     const fetchVMs = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/vms`, {
+        const API_BASE = import.meta.env.VITE_API_BASE || '/api'
+        const res = await fetch(`${API_BASE}/admin/vms`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
