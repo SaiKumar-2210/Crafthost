@@ -10,7 +10,7 @@
  * 
  * Run with: node control.js
  */
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
@@ -423,19 +423,27 @@ app.post('/api/internal/register', requireSystemSecret, async (req, res) => {
 });
 
 app.post('/api/internal/heartbeat', requireSystemSecret, async (req, res) => {
-  const { vmName, runningServers, cpuPercent, ramUsedMB } = req.body;
+  const { vmName, region, ip, maxSlots, runningServers, cpuPercent, ramUsedMB } = req.body;
 
   try {
+    // Upsert: auto-recreate VM record if it was deleted (e.g. by clear-queue.js)
+    const updateFields = {
+      lastHeartbeat: new Date(),
+      status: 'running',
+      runningServerIds: runningServers || [],
+      activeServersCount: (runningServers || []).length,
+      cpuPercent: cpuPercent || 0,
+      ramUsedMB: ramUsedMB || 0,
+    };
+    // Include registration data if provided (self-healing heartbeat)
+    if (region) updateFields.region = region;
+    if (ip) updateFields.ip = ip;
+    if (maxSlots) updateFields.maxServers = maxSlots;
+
     await VMNode.findOneAndUpdate(
       { vmName },
-      {
-        lastHeartbeat: new Date(),
-        status: 'running',
-        runningServerIds: runningServers || [],
-        activeServersCount: (runningServers || []).length,
-        cpuPercent: cpuPercent || 0,
-        ramUsedMB: ramUsedMB || 0,
-      }
+      updateFields,
+      { upsert: true }
     );
 
     // Sync GameServer statuses from heartbeat ground truth

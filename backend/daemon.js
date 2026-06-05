@@ -1,3 +1,4 @@
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
@@ -601,6 +602,7 @@ async function registerWithControlPlane() {
 async function sendHeartbeat() {
   try {
     const os = require('os');
+    const ip = await getPublicIp();
     const cpuPercent = Math.round(os.loadavg()[0] * 100 / (os.cpus().length || 1));
     const ramUsedMB = Math.round((os.totalmem() - os.freemem()) / 1024 / 1024);
 
@@ -609,6 +611,9 @@ async function sendHeartbeat() {
       headers: { 'Content-Type': 'application/json', 'x-daemon-secret': DAEMON_SECRET },
       body: JSON.stringify({
         vmName: VM_NAME,
+        region: VM_REGION,
+        ip,
+        maxSlots: 5,
         runningServers: Object.keys(runningProcesses),
         cpuPercent,
         ramUsedMB
@@ -619,9 +624,9 @@ async function sendHeartbeat() {
   }
 }
 
-// Register 5 seconds after startup, then heartbeat every 30 seconds
+// Register 5 seconds after startup, then heartbeat every 10 seconds
 setTimeout(registerWithControlPlane, 5000);
-setInterval(sendHeartbeat, 30000);
+setInterval(sendHeartbeat, 10000);
 
 // =============================================
 //  START SERVER

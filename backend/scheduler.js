@@ -9,7 +9,7 @@
  * 
  * Run with: node scheduler.js
  */
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const { Worker } = require('bullmq');
 const { redisConnection, reaperQueue } = require('./queues');
 const { connectDB, VMNode, GameServer, DeployJob, ServerPermission } = require('./db');
@@ -164,13 +164,32 @@ async function findVM(region, jobId) {
     }
   }
 
-  // 4. No VM available — provide an accurate error based on actual state
+  // 4. No VM available — wait for daemon heartbeat to auto-register
+  console.log(`[Scheduler] No VM record found for ${region}. Waiting for daemon heartbeat to register...`);
+  await updateJob(jobId, { status: 'starting_vm', progress: 15, message: `Waiting for Node VM to come online in ${region}...` });
+
+  // Poll for up to 30 seconds (6 attempts × 5s) for the daemon's self-healing heartbeat to create the record
+  for (let attempt = 1; attempt <= 6; attempt++) {
+    await new Promise(r => setTimeout(r, 5000));
+    const freshVM = await VMNode.findOne({
+      region,
+      status: 'running',
+      $expr: { $lt: ['$activeServersCount', '$maxServers'] }
+    });
+    if (freshVM) {
+      console.log(`[Scheduler] ✅ VM ${freshVM.vmName} appeared after ${attempt * 5}s wait.`);
+      await updateJob(jobId, { message: `Using VM ${freshVM.vmName}`, progress: 65 });
+      return freshVM;
+    }
+    console.log(`[Scheduler] Still waiting for VM in ${region} (attempt ${attempt}/6)...`);
+    await updateJob(jobId, { message: `Waiting for Node VM in ${region}... (${attempt * 5}s)` });
+  }
+
+  // After 30s, check what we have and give a useful error
   const allInRegion = await VMNode.find({ region });
   if (allInRegion.length > 0) {
-    // Check what state the VMs are in to give a useful error
     const statuses = allInRegion.map(v => `${v.vmName}(${v.status}, ${v.activeServersCount}/${v.maxServers})`);
     const atCapacity = allInRegion.filter(v => v.activeServersCount >= v.maxServers);
-    const notReady = allInRegion.filter(v => !['running', 'deallocated'].includes(v.status) && v.activeServersCount < v.maxServers);
 
     if (atCapacity.length === allInRegion.length) {
       throw new Error(
@@ -178,19 +197,15 @@ async function findVM(region, jobId) {
         `Wait for existing servers to be removed or contact admin.`
       );
     }
-    if (notReady.length > 0) {
-      throw new Error(
-        `VMs in ${region} are not ready: ${statuses.join(', ')}. ` +
-        `They may be starting up or need manual intervention. Try again in a minute.`
-      );
-    }
     throw new Error(
-      `No available VMs in ${region}. VM states: ${statuses.join(', ')}. Contact admin.`
+      `VMs in ${region} are not ready: ${statuses.join(', ')}. ` +
+      `The Node VM may still be booting. Please try again in a minute.`
     );
   }
   throw new Error(
-    `No VM is configured for region "${region}". ` +
-    `Available regions: ${(await VMNode.distinct('region')).join(', ') || 'none — run "node scripts/provision-static-vms.js" first'}`
+    `No Node VM is online for region "${region}". ` +
+    `Please ensure the daemon is running on the worker node. ` +
+    `Available regions: ${(await VMNode.distinct('region')).join(', ') || 'none'}`
   );
 }
 
@@ -202,6 +217,24 @@ async function processDeployServer(job) {
   const jobId = String(job.id);
 
   console.log(`[Scheduler] Processing deploy-server job ${jobId}: "${name}" in ${region}`);
+
+  // --- Auto-cleanup: Remove servers stuck in provisioning for >2 minutes ---
+  const staleProvisioningCutoff = new Date(Date.now() - 2 * 60 * 1000);
+  const staleServers = await GameServer.find({
+    ownerId: userId,
+    status: { $in: ['queued', 'provisioning', 'deploying'] },
+    updatedAt: { $lt: staleProvisioningCutoff }
+  });
+  if (staleServers.length > 0) {
+    const staleIds = staleServers.map(s => s.serverId);
+    console.log(`[Scheduler] 🧹 Cleaning up ${staleServers.length} stuck server(s): ${staleIds.join(', ')}`);
+    await GameServer.deleteMany({ serverId: { $in: staleIds } });
+    // Also clean up their deploy job records
+    const staleJobIds = staleServers.map(s => s.deployJobId).filter(Boolean);
+    if (staleJobIds.length > 0) {
+      await DeployJob.deleteMany({ jobId: { $in: staleJobIds } });
+    }
+  }
 
   // Create or update tracking records (safe against retries)
   await DeployJob.findOneAndUpdate(
@@ -414,7 +447,7 @@ async function processIdleReaper() {
   if (!isAzureConfigured) return;
 
   console.log('[Reaper] Running idle VM check...');
-  const staleThreshold = new Date(Date.now() - 90_000); // 90s = 3 missed heartbeats
+  const staleThreshold = new Date(Date.now() - 40_000); // 40s = 4 missed heartbeats (10s interval)
 
   // Mark VMs with missed heartbeats as unhealthy
   const unhealthyResult = await VMNode.updateMany(
