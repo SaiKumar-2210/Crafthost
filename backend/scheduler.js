@@ -213,7 +213,8 @@ async function findVM(region, jobId) {
 
 async function processDeployServer(job) {
   const { userId, name, region, versionType, versionNumber } = job.data;
-  const serverId = 'srv-' + Date.now();
+  // Use a deterministic serverId based on jobId so retries don't create duplicate servers
+  const serverId = 'srv-' + String(job.id).padStart(5, '0');
   const jobId = String(job.id);
 
   console.log(`[Scheduler] Processing deploy-server job ${jobId}: "${name}" in ${region}`);
