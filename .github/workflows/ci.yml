@@ -1,0 +1,59 @@
+name: CraftHost CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  backend-tests:
+    name: Backend Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install Backend Dependencies
+      working-directory: ./backend
+      run: npm ci || npm install
+
+    - name: Run Backend Tests
+      working-directory: ./backend
+      run: npm test
+      env:
+        # These are used for the integration tests. 
+        # For actual production, set these in GitHub Repository Secrets!
+        MONGODB_URI: ${{ secrets.MONGODB_URI || 'mongodb+srv://saikumar22102005:projectstartup@cluster0.spzm4pc.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0' }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET || 'test_jwt_secret_12345' }}
+        NODE_ENV: test
+
+  frontend-build:
+    name: Frontend Build Verification
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install Frontend Dependencies
+      run: npm ci || npm install
+
+    - name: Verify React Build
+      run: npm run build
+      env:
+        VITE_API_BASE: /api

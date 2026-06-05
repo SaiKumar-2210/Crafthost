@@ -930,7 +930,11 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`🚀 CraftHost Control Plane running on port ${PORT}`);
-  console.log(`   Mode: ${isAzureConfigured ? 'Azure Cloud' : 'Local Development'}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  server.listen(PORT, () => {
+    console.log(`🚀 CraftHost Control Plane running on port ${PORT}`);
+    console.log(`   Mode: ${isAzureConfigured ? 'Azure Cloud' : 'Local Development'}`);
+  });
+}
+
+module.exports = { app, server };

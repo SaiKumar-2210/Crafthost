@@ -9,7 +9,7 @@
     "dev": "concurrently \"node control.js\" \"node scheduler.js\"",
     "clear-queue": "node clear-queue.js",
     "cleanup-azure": "node scripts/cleanup-azure.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "cross-env NODE_ENV=test jest --forceExit --detectOpenHandles"
   },
   "keywords": [],
   "author": "SaiKumar-2210",
@@ -37,6 +37,9 @@
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "jest": "^30.4.2",
+    "supertest": "^7.2.2"
   }
 }
