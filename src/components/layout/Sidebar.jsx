@@ -90,7 +90,7 @@ export default function Sidebar() {
       <div className="sidebar-footer">
         <div style={{ padding: '0 1rem 1rem 1rem' }}>
           <button 
-            className="btn btn-primary" 
+            className="btn btn-deploy" 
             style={{ width: '100%', justifyContent: collapsed ? 'center' : 'flex-start', padding: collapsed ? '0.75rem 0' : '0.75rem 1rem' }}
             onClick={() => navigate('/deploy')}
           >
