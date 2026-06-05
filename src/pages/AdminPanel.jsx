@@ -7,7 +7,8 @@ import './AdminPanel.css'
 
 export default function AdminPanel() {
   const navigate = useNavigate()
-  const { user, token } = useApp()
+  const { user } = useApp()
+  const token = localStorage.getItem('crafthost_token')
   const [vms, setVms] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -43,7 +44,7 @@ export default function AdminPanel() {
       const interval = setInterval(fetchVMs, 10000)
       return () => clearInterval(interval)
     }
-  }, [user, token, navigate])
+  }, [user, navigate])
 
   const formatTimeAgo = (dateString) => {
     if (!dateString) return 'Never'
