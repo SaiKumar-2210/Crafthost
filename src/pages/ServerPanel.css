@@ -65,6 +65,12 @@
   animation: pulse-green 2s infinite;
 }
 
+.status-pulse.pulse-starting {
+  background: var(--status-online);
+  box-shadow: 0 0 12px var(--status-online);
+  animation: pulse-green 0.5s infinite alternate;
+}
+
 .status-pulse.pulse-warning {
   background: var(--status-warning);
   box-shadow: 0 0 12px var(--status-warning);

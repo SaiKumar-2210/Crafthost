@@ -32,13 +32,13 @@ export default function ServerCard({ server }) {
     <div className={`server-card card ${isTransitioning ? 'starting-animation' : ''}`}>
       <div className="server-card-header">
         <div className="server-info">
-          <div className={`status-indicator ${isOnline ? 'status-online' : isTransitioning ? 'status-warning' : 'status-offline'}`}>
+          <div className={`status-indicator ${isOnline ? 'status-online' : isTransitioning ? 'status-online' : 'status-offline'}`}>
             {isTransitioning && <RotateCcw size={10} className="spin" />}
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h3 className="server-name" style={{ margin: 0 }}>{server.name}</h3>
-              <span className={`badge ${isOnline ? 'badge-success' : isTransitioning ? 'badge-warning' : 'badge-neutral'}`} style={{ fontSize: '0.7rem', padding: '2px 6px' }}>
+              <span className={`badge ${isOnline ? 'badge-success' : isTransitioning ? 'badge-success' : 'badge-neutral'}`} style={{ fontSize: '0.7rem', padding: '2px 6px' }}>
                 {statusLabel}
               </span>
             </div>

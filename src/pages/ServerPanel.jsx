@@ -97,11 +97,11 @@ export default function ServerPanel() {
           {/* Server Info Bar */}
           <div className="server-info-banner card">
             <div className="info-primary">
-              <div className={`status-pulse ${isOnline ? 'pulse-online' : isTransitioning ? 'pulse-warning' : ''}`} />
+              <div className={`status-pulse ${isOnline ? 'pulse-online' : isTransitioning ? 'pulse-starting' : ''}`} />
               <div>
                 <h1 className="server-banner-name" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   {server.name}
-                  <span className={`badge ${isOnline ? 'badge-success' : isTransitioning ? 'badge-warning' : 'badge-neutral'}`} style={{ fontSize: '0.85rem', fontWeight: '500', padding: '4px 8px' }}>
+                  <span className={`badge ${isOnline ? 'badge-success' : isTransitioning ? 'badge-success' : 'badge-neutral'}`} style={{ fontSize: '0.85rem', fontWeight: '500', padding: '4px 8px' }}>
                     {statusLabel}
                   </span>
                 </h1>
