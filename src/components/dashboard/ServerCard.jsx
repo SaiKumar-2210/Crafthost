@@ -1,10 +1,11 @@
+import { useState, useEffect } from 'react'
 import { Play, Square, Settings, HardDrive, Users, Cpu, Copy, RotateCcw } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
 import './ServerCard.css'
 
 export default function ServerCard({ server }) {
-  const { toggleServerStatus } = useApp()
+  const { toggleServerStatus, getAuthHeaders, API_BASE } = useApp()
   const isOnline = server.status === 'online'
   const isTransitioning = ['starting', 'stopping', 'queued', 'provisioning', 'deploying'].includes(server.status)
 
@@ -18,18 +19,59 @@ export default function ServerCard({ server }) {
     offline: 'Offline',
   }[server.status] || server.status
 
-  const safePlayers = server.players || '0/20';
-  const safeRam = server.ram || '0GB / 4GB';
-  const safeCpu = server.cpu || '0%';
+  const [liveStats, setLiveStats] = useState({ cpu: 0, ram: 0, players: server.players || '0/20' });
+
+  useEffect(() => {
+    if (!isOnline) return;
+    
+    let isMounted = true;
+    const fetchLiveStats = async () => {
+      try {
+        const headers = getAuthHeaders();
+        const [statsRes, playersRes] = await Promise.all([
+          fetch(`${API_BASE}/servers/${server.id}/stats`, { headers }),
+          fetch(`${API_BASE}/servers/${server.id}/players`, { headers })
+        ]);
+        
+        if (!isMounted) return;
+        
+        let newStats = { ...liveStats };
+        if (statsRes.ok) {
+          const stats = await statsRes.json();
+          newStats.cpu = stats.cpu || 0;
+          newStats.ram = stats.ram || 0;
+        }
+        if (playersRes.ok) {
+          const data = await playersRes.json();
+          const pList = data.players || [];
+          newStats.players = `${pList.length}/20`;
+        }
+        setLiveStats(newStats);
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    fetchLiveStats();
+    const interval = setInterval(fetchLiveStats, 5000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [isOnline, server.id, getAuthHeaders, API_BASE]);
+
+  const safePlayers = isOnline ? liveStats.players : (server.players || '0/20');
+  const safeRam = isOnline ? `${liveStats.ram.toFixed(1)}GB / 4.0GB` : (server.ram || '0GB / 4GB');
+  const safeCpu = isOnline ? `${liveStats.cpu.toFixed(1)}%` : (server.cpu || '0%');
 
   const playersArr = safePlayers.split('/');
   const playerPercent = playersArr.length === 2 ? (parseInt(playersArr[0]) / parseInt(playersArr[1])) * 100 : 0;
 
-  const ramArr = safeRam.split('/');
-  const ramPercent = ramArr.length === 2 ? (parseFloat(ramArr[0].replace('GB', '')) / parseFloat(ramArr[1].replace('GB', ''))) * 100 : 0;
+  const ramPercent = isOnline ? (liveStats.ram / 4.0) * 100 : 0;
+  const cpuPercent = isOnline ? liveStats.cpu : 0;
 
   return (
-    <div className={`server-card card ${isTransitioning ? 'starting-animation' : ''}`}>
+    <div className={`server-card card ${isTransitioning ? 'starting-animation' : ''} ${isOnline ? 'server-live' : ''}`}>
       <div className="server-card-header">
         <div className="server-info">
           <div className={`status-indicator ${isOnline ? 'status-online' : isTransitioning ? 'status-online' : 'status-offline'}`}>
@@ -61,12 +103,13 @@ export default function ServerCard({ server }) {
                 <Copy size={12} />
               </button>
             </div>
+            
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', marginTop: '10px' }}>
+              <div className="server-version badge badge-neutral">{server.node}</div>
+              <div className="server-version badge badge-neutral">{server.versionType} {server.versionNumber}</div>
+              {isOnline && <div className="server-version badge badge-success" style={{ backgroundColor: 'var(--status-online)', color: '#000', border: 'none' }}>Uptime: {server.uptime}</div>}
+            </div>
           </div>
-        </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <div className="server-version badge badge-neutral">{server.node}</div>
-          <div className="server-version badge badge-neutral">{server.versionType} {server.versionNumber}</div>
-          {isOnline && <div className="server-version badge badge-success" style={{ backgroundColor: 'var(--success-color)', color: '#000', border: 'none' }}>Uptime: {server.uptime}</div>}
         </div>
       </div>
 
@@ -102,10 +145,10 @@ export default function ServerCard({ server }) {
             <span className="metric-label"><Cpu size={12} /> CPU</span>
             <span className="metric-value">{safeCpu}</span>
           </div>
-           <div className="progress-bar">
+          <div className="progress-bar">
             <div 
               className="progress-fill" 
-              style={{ width: safeCpu === 'Active' ? '15%' : safeCpu, backgroundImage: 'linear-gradient(90deg, var(--accent-secondary), var(--accent-primary))' }}
+              style={{ width: `${Math.min(cpuPercent, 100)}%`, backgroundImage: 'linear-gradient(90deg, var(--accent-secondary), var(--accent-primary))' }}
             />
           </div>
         </div>

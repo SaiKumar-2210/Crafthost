@@ -16,11 +16,8 @@ export default function Sidebar() {
   }
 
   const navItems = [
-    { icon: Grid, label: 'Overview', path: '/dashboard' },
+    { icon: Grid, label: 'Home', path: '/dashboard' },
     { icon: Server, label: 'My Servers', path: '#servers' },
-    { icon: TerminalSquare, label: 'Console', path: '#console' },
-    { icon: FolderOpen, label: 'File Manager', path: '#files' },
-    { icon: Users, label: 'Players', path: '#players' },
     { icon: HardDrive, label: 'Backups', path: '#backups' },
   ]
 
