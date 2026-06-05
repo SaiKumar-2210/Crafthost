@@ -464,10 +464,11 @@ async function processIdleReaper() {
     console.log(`[Reaper] Marked ${unhealthyResult.modifiedCount} VM(s) as unhealthy (missed heartbeats).`);
   }
 
-  // Deallocate healthy, idle VMs (running with 0 servers)
+  // Deallocate healthy, idle VMs (running with 0 active processes)
   const idleVMs = await VMNode.find({
     status: 'running',
-    activeServersCount: 0,
+    runningServerIds: { $size: 0 },
+    updatedAt: { $lt: recentBootThreshold }, // Don't kill VMs that are currently deploying or just booted
     $or: [
       { lastHeartbeat: { $gte: staleThreshold } },
       { lastHeartbeat: null },

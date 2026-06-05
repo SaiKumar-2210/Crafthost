@@ -325,7 +325,6 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
             const { deallocateAzureVM } = require('./azure-provisioner');
             await deallocateAzureVM(vmNode.vmName);
             vmNode.status = 'deallocated';
-            vmNode.activeServersCount = 0;
             await vmNode.save();
           }
         } catch (e) {
