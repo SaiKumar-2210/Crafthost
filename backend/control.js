@@ -247,9 +247,12 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
     if (action === 'start' && vmNode && isAzureConfigured) {
       if (vmNode.status === 'deallocated' || vmNode.status === 'unhealthy') {
         console.log(`[Control] Starting deallocated VM ${vmNode.vmName} for server ${id}...`);
+        io.to(`server-${id}`).emit('console-log', `\r\n[System] VM is offline. Booting Azure VM '${vmNode.vmName}'... This will take ~45 seconds.\r\n`);
+        
         await startAzureVM(vmNode.vmName);
         vmNode.status = 'starting';
         await vmNode.save();
+        io.to(`server-${id}`).emit('console-log', `[System] VM successfully started in Azure. Waiting for public IP allocation...\r\n`);
 
         // Wait for IP
         let resolvedIp = null;
@@ -259,11 +262,14 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
           if (resolvedIp) break;
         }
         if (!resolvedIp) {
+          io.to(`server-${id}`).emit('console-log', `[System] FATAL: Failed to resolve VM IP after restarting.\r\n`);
           return res.status(500).json({ error: 'Failed to resolve VM IP after restarting.' });
         }
         vmNode.ip = resolvedIp;
         vmNode.status = 'running';
         await vmNode.save();
+        
+        io.to(`server-${id}`).emit('console-log', `[System] VM IP assigned (${resolvedIp}). Waiting for daemon to start...\r\n`);
 
         // Update GameServer IP
         gs.ip = resolvedIp;
@@ -271,6 +277,7 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
 
         // Wait for daemon to boot
         await new Promise(r => setTimeout(r, 5000));
+        io.to(`server-${id}`).emit('console-log', `[System] VM is ready! Sending start command to Minecraft daemon...\r\n`);
       }
     }
 
