@@ -431,7 +431,6 @@ app.post('/api/internal/heartbeat', requireSystemSecret, async (req, res) => {
       lastHeartbeat: new Date(),
       status: 'running',
       runningServerIds: runningServers || [],
-      activeServersCount: (runningServers || []).length,
       cpuPercent: cpuPercent || 0,
       ramUsedMB: ramUsedMB || 0,
     };
