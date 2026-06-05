@@ -16,8 +16,8 @@ export default function Sidebar() {
   }
 
   const navItems = [
-    { icon: Grid, label: 'Home', path: '/dashboard' },
-    { icon: Server, label: 'My Servers', path: '#servers' },
+    { icon: Grid, label: 'Home', path: '/' },
+    { icon: Server, label: 'My Servers', path: '/dashboard' },
     { icon: HardDrive, label: 'Backups', path: '#backups' },
   ]
 

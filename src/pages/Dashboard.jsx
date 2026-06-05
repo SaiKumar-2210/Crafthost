@@ -1,36 +1,34 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import Sidebar from '../components/layout/Sidebar'
 import StatsGrid from '../components/dashboard/StatsGrid'
 import ServerCard from '../components/dashboard/ServerCard'
+import BackupsSection from '../components/dashboard/BackupsSection'
 import { Search, Bell, Plus } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import './Dashboard.css'
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user, servers } = useApp()
+  
+  const showBackups = location.hash === '#backups'
 
   return (
     <div className="dashboard-layout">
       <Sidebar />
       <div className="dashboard-main">
         {/* Topbar */}
-        <header className="dashboard-topbar">
+        <header className="dashboard-header">
           <div className="search-bar hide-mobile">
-            <Search size={18} />
-            <input type="text" placeholder="Search servers..." />
+            <Search size={18} className="search-icon" />
+            <input type="text" className="search-input" placeholder="Search servers..." style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none' }} />
           </div>
           
-          <div className="topbar-actions">
-            <button className="btn-icon">
+          <div className="header-actions">
+            <button className="btn-icon notification-btn">
               <Bell size={20} />
               <span className="notification-dot"></span>
-            </button>
-            <button 
-              className="btn btn-primary btn-deploy-topbar" 
-              onClick={() => navigate('/deploy')}
-            >
-              <Plus size={16} /> Deploy Server
             </button>
           </div>
         </header>
@@ -45,17 +43,21 @@ export default function Dashboard() {
           <StatsGrid />
 
           <div className="dashboard-grid" style={{ gridTemplateColumns: '1fr' }}>
-            <div className="servers-section">
-              <div className="section-header-compact">
-                <h2 className="section-title-sm">Active Servers</h2>
-                <button className="btn-link text-sm">View All</button>
+            {showBackups ? (
+              <BackupsSection />
+            ) : (
+              <div className="servers-section">
+                <div className="section-header-compact">
+                  <h2 className="section-title-sm">Active Servers</h2>
+                  <button className="btn-link text-sm">View All</button>
+                </div>
+                <div className="servers-list">
+                  {servers.map(server => (
+                    <ServerCard key={server.id} server={server} />
+                  ))}
+                </div>
               </div>
-              <div className="servers-list">
-                {servers.map(server => (
-                  <ServerCard key={server.id} server={server} />
-                ))}
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
