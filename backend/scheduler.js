@@ -449,9 +449,14 @@ async function processIdleReaper() {
   console.log('[Reaper] Running idle VM check...');
   const staleThreshold = new Date(Date.now() - 40_000); // 40s = 4 missed heartbeats (10s interval)
 
-  // Mark VMs with missed heartbeats as unhealthy
+  // Mark VMs with missed heartbeats as unhealthy (skip if recently updated/booting within last 2 mins)
+  const recentBootThreshold = new Date(Date.now() - 120_000);
   const unhealthyResult = await VMNode.updateMany(
-    { status: 'running', lastHeartbeat: { $lt: staleThreshold, $ne: null } },
+    { 
+      status: 'running', 
+      lastHeartbeat: { $lt: staleThreshold, $ne: null },
+      updatedAt: { $lt: recentBootThreshold } // Ignore recently started VMs
+    },
     { status: 'unhealthy' }
   );
   if (unhealthyResult.modifiedCount > 0) {

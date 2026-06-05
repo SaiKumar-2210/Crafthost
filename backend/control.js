@@ -765,8 +765,8 @@ async function tryEstablishDaemonRelay(serverId, notifySocket) {
     }
 
     const vmNode = await VMNode.findOne({ vmName: gs.vmName });
-    // Accept both 'running' and 'starting' — daemon may already be up during starting phase
-    if (!vmNode || !vmNode.ip || !['running', 'starting'].includes(vmNode.status)) {
+    // Accept 'running', 'starting', and 'unhealthy' — daemon may already be up or just missed heartbeats
+    if (!vmNode || !vmNode.ip || !['running', 'starting', 'unhealthy'].includes(vmNode.status)) {
       if (notifySocket) notifySocket.emit('console-log', '[System] VM is not running. Start the server first.\r\n');
       return;
     }
