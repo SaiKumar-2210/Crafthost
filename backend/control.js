@@ -88,10 +88,51 @@ const checkServerAccess = async (req, res, next) => {
 
 const requireFullAccess = (req, res, next) => {
   if (req.serverRole !== 'owner' && req.serverRole !== 'full') {
-    return res.status(403).json({ error: 'Access denied: Full Control required.' });
+    return res.status(403).json({ error: 'Full access required' });
   }
   next();
 };
+
+const checkAdmin = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Access denied: Admin role required.' });
+  }
+  next();
+};
+
+// =============================================
+//  ADMIN ROUTES
+// =============================================
+
+app.get('/api/admin/vms', protect, checkAdmin, async (req, res) => {
+  try {
+    const vms = await VMNode.find().sort({ region: 1, vmIndex: 1 });
+    // Also fetch total game servers to show capacity
+    const servers = await GameServer.find();
+    
+    res.json({
+      vms: vms.map(vm => {
+        // Calculate how many deployed servers are assigned to this VM
+        const assignedServers = servers.filter(s => s.region === vm.region && s.vmName === vm.vmName);
+        return {
+          id: vm._id,
+          vmName: vm.vmName,
+          region: vm.region,
+          ip: vm.ip,
+          status: vm.status,
+          cpuPercent: vm.cpuPercent,
+          ramUsedMB: vm.ramUsedMB,
+          runningServers: vm.runningServerIds.length,
+          deployedServers: assignedServers.length,
+          maxServers: vm.maxServers,
+          lastHeartbeat: vm.lastHeartbeat,
+        };
+      })
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 // --- Helper: Get daemon URL from GameServer record ---
 const getNodeUrl = async (gameServer) => {

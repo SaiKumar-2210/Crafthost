@@ -468,10 +468,9 @@ async function processIdleReaper() {
   const idleVMs = await VMNode.find({
     status: 'running',
     runningServerIds: { $size: 0 },
-    updatedAt: { $lt: recentBootThreshold }, // Don't kill VMs that are currently deploying or just booted
     $or: [
-      { lastHeartbeat: { $gte: staleThreshold } },
-      { lastHeartbeat: null },
+      { lastHeartbeat: { $gte: staleThreshold } }, // Sent a heartbeat recently. Safe to kill.
+      { lastHeartbeat: null, updatedAt: { $lt: recentBootThreshold } }, // Hung boot: never sent a heartbeat, but been 2+ mins.
     ]
   });
 

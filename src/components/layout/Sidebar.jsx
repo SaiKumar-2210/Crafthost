@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { Server, Grid, TerminalSquare, FolderOpen, Users, HardDrive, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Plus } from 'lucide-react'
+import { Server, Grid, TerminalSquare, FolderOpen, Users, HardDrive, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Plus, Shield } from 'lucide-react'
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import './Sidebar.css'
@@ -20,6 +20,10 @@ export default function Sidebar() {
     { icon: Server, label: 'My Servers', path: '/dashboard' },
     { icon: HardDrive, label: 'Backups', path: '#backups' },
   ]
+
+  if (user?.role === 'admin') {
+    navItems.push({ icon: Shield, label: 'Admin Panel', path: '/admin' })
+  }
 
   const settingsItems = [
     { icon: Settings, label: 'Account Settings', path: '#settings' },

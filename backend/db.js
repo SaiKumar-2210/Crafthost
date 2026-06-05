@@ -18,7 +18,8 @@ const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  plan: { type: String, default: 'Free Tier' }
+  plan: { type: String, default: 'Free Tier' },
+  role: { type: String, default: 'user', enum: ['user', 'admin'] }
 }, { timestamps: true });
 
 const ServerPermissionSchema = new mongoose.Schema({
