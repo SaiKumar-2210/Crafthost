@@ -46,7 +46,7 @@ const DAEMON_SECRET = process.env.DAEMON_SECRET || 'crafthost-internal-node-secr
 
 // Region → public hostname mapping for player-facing connection addresses
 const REGION_HOSTNAMES = {
-  centralindia: process.env.HOSTNAME_INDIA || 'crafthost.saikumar.co.in',
+  centralindia: process.env.HOSTNAME_INDIA || 'in.crafthost.saikumar.co.in',
   koreacentral: process.env.HOSTNAME_KOREA || 'kr.crafthost.saikumar.co.in',
 };
 const getPublicHostname = (region) => REGION_HOSTNAMES[region] || null;
