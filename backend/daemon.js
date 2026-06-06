@@ -425,13 +425,20 @@ app.get('/api/daemon/settings/:id', (req, res) => {
     difficulty: get('difficulty', 'normal'),
     gamemode: get('gamemode', 'survival'),
     maxPlayers: get('max-players', '20'),
-    viewDistance: get('view-distance', '10')
+    viewDistance: get('view-distance', '10'),
+    onlineMode: get('online-mode', 'true'),
+    levelSeed: get('level-seed', ''),
+    generateStructures: get('generate-structures', 'true'),
+    hardcore: get('hardcore', 'false'),
+    whiteList: get('white-list', 'false'),
+    pvp: get('pvp', 'true'),
+    spawnProtection: get('spawn-protection', '16')
   });
 });
 
 app.post('/api/daemon/settings/:id', (req, res) => {
   const { id } = req.params;
-  const { difficulty, gamemode, maxPlayers, viewDistance } = req.body;
+  const { difficulty, gamemode, maxPlayers, viewDistance, onlineMode, levelSeed, generateStructures, hardcore, whiteList, pvp, spawnProtection } = req.body;
   const serverPath = path.join(SERVERS_DIR, id);
   const propsPath = path.join(serverPath, 'server.properties');
   
@@ -445,10 +452,17 @@ app.post('/api/daemon/settings/:id', (req, res) => {
     else props += `\n${key}=${val}`;
   };
   
-  if (difficulty) updateProp('difficulty', difficulty);
-  if (gamemode) updateProp('gamemode', gamemode);
-  if (maxPlayers) updateProp('max-players', maxPlayers);
-  if (viewDistance) updateProp('view-distance', viewDistance);
+  if (difficulty !== undefined) updateProp('difficulty', difficulty);
+  if (gamemode !== undefined) updateProp('gamemode', gamemode);
+  if (maxPlayers !== undefined) updateProp('max-players', maxPlayers);
+  if (viewDistance !== undefined) updateProp('view-distance', viewDistance);
+  if (onlineMode !== undefined) updateProp('online-mode', onlineMode);
+  if (levelSeed !== undefined) updateProp('level-seed', levelSeed);
+  if (generateStructures !== undefined) updateProp('generate-structures', generateStructures);
+  if (hardcore !== undefined) updateProp('hardcore', hardcore);
+  if (whiteList !== undefined) updateProp('white-list', whiteList);
+  if (pvp !== undefined) updateProp('pvp', pvp);
+  if (spawnProtection !== undefined) updateProp('spawn-protection', spawnProtection);
   
   fs.writeFileSync(propsPath, props);
   res.json({ success: true });

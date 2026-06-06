@@ -182,9 +182,9 @@ export default function ServerSettings() {
         <nav className="settings-nav">
           <button className={`settings-nav-item ${activeTab === 'general' ? 'active' : ''}`} onClick={() => setActiveTab('general')}>General Information</button>
           <button className={`settings-nav-item ${activeTab === 'game' ? 'active' : ''}`} onClick={() => setActiveTab('game')}>Game Settings</button>
-          <button className="settings-nav-item">Network & Ports</button>
-          <button className="settings-nav-item">World Management</button>
-          <button className="settings-nav-item">Security</button>
+          <button className={`settings-nav-item ${activeTab === 'network' ? 'active' : ''}`} onClick={() => setActiveTab('network')}>Network & Ports</button>
+          <button className={`settings-nav-item ${activeTab === 'world' ? 'active' : ''}`} onClick={() => setActiveTab('world')}>World Management</button>
+          <button className={`settings-nav-item ${activeTab === 'security' ? 'active' : ''}`} onClick={() => setActiveTab('security')}>Security</button>
           <button className={`settings-nav-item ${activeTab === 'access' ? 'active' : ''}`} onClick={() => setActiveTab('access')}>Access Sharing</button>
           <button className={`settings-nav-item text-danger ${activeTab === 'danger' ? 'active' : ''}`} onClick={() => setActiveTab('danger')}>Danger Zone</button>
         </nav>
@@ -283,6 +283,121 @@ export default function ServerSettings() {
               </div>
             </div>
           </div>
+        ) : activeTab === 'network' ? (
+          <form onSubmit={handleSubmit} className="settings-form">
+            <div className="settings-header">
+              <div>
+                <h2 className="settings-title">Network & Ports</h2>
+                <p className="settings-desc">View and manage server network configurations.</p>
+              </div>
+              <div className="settings-actions">
+                <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
+                  <Save size={14} />
+                  <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="settings-grid">
+              <div className="form-group">
+                <label>Server IP Address</label>
+                <input type="text" className="form-control" value={server?.ip || 'N/A'} disabled />
+                <span className="form-hint">The public IP address mapped to your server.</span>
+              </div>
+
+              <div className="form-group">
+                <label>Server Port</label>
+                <input type="number" className="form-control" value={server?.port || '25565'} disabled />
+                <span className="form-hint">The designated port for this server instance.</span>
+              </div>
+            </div>
+          </form>
+        ) : activeTab === 'world' ? (
+          <form onSubmit={handleSubmit} className="settings-form">
+            <div className="settings-header">
+              <div>
+                <h2 className="settings-title">World Management</h2>
+                <p className="settings-desc">Configure world generation properties. Changes require a server restart and a new world generation if the seed is changed.</p>
+              </div>
+              <div className="settings-actions">
+                <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
+                  <Save size={14} />
+                  <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="settings-grid">
+              <div className="form-group">
+                <label>Level Seed</label>
+                <input type="text" className="form-control" name="levelSeed" defaultValue={settings?.levelSeed || ''} placeholder="Leave blank for random" />
+              </div>
+
+              <div className="form-group">
+                <label>Generate Structures</label>
+                <select className="form-control" name="generateStructures" defaultValue={settings?.generateStructures || 'true'}>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Hardcore Mode</label>
+                <select className="form-control" name="hardcore" defaultValue={settings?.hardcore || 'false'}>
+                  <option value="false">Disabled</option>
+                  <option value="true">Enabled</option>
+                </select>
+                <span className="form-hint text-danger">If enabled, players who die will be permanently banned from the server.</span>
+              </div>
+            </div>
+          </form>
+        ) : activeTab === 'security' ? (
+          <form onSubmit={handleSubmit} className="settings-form">
+            <div className="settings-header">
+              <div>
+                <h2 className="settings-title">Security</h2>
+                <p className="settings-desc">Configure player access and gameplay security.</p>
+              </div>
+              <div className="settings-actions">
+                <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
+                  <Save size={14} />
+                  <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="settings-grid">
+              <div className="form-group">
+                <label>Online Mode (Authentication)</label>
+                <select className="form-control" name="onlineMode" defaultValue={settings?.onlineMode || 'true'}>
+                  <option value="true">Enabled (Premium Accounts Only)</option>
+                  <option value="false">Disabled (Offline/Cracked Mode)</option>
+                </select>
+                <span className="form-hint">Disabling this allows non-premium accounts to join but is a security risk.</span>
+              </div>
+
+              <div className="form-group">
+                <label>Whitelist</label>
+                <select className="form-control" name="whiteList" defaultValue={settings?.whiteList || 'false'}>
+                  <option value="false">Disabled</option>
+                  <option value="true">Enabled</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Player vs Player (PvP)</label>
+                <select className="form-control" name="pvp" defaultValue={settings?.pvp || 'true'}>
+                  <option value="true">Enabled</option>
+                  <option value="false">Disabled</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Spawn Protection Radius</label>
+                <input type="number" className="form-control" name="spawnProtection" defaultValue={settings?.spawnProtection || '16'} min="0" max="100" />
+              </div>
+            </div>
+          </form>
         ) : (
           <form onSubmit={handleSubmit} className="settings-form">
             <div className="settings-header">
