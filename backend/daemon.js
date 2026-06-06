@@ -267,8 +267,19 @@ app.post('/api/daemon/power/:id', async (req, res) => {
         consoleHistory[id].push(line);
         if (consoleHistory[id].length > 500) consoleHistory[id].shift();
         io.to(`server-${id}`).emit('console-log', line);
-        if (line.includes('Done (') || line.includes('For help, type "help"')) {
+        if ((line.includes('Done (') || line.includes('For help, type "help"')) && !serverProcess.ready) {
+          serverProcess.ready = true;
           io.to(`server-${id}`).emit('status-update', 'online');
+          try {
+            const propsPath = path.join(SERVERS_DIR, id, 'server.properties');
+            if (fs.existsSync(propsPath)) {
+              const props = fs.readFileSync(propsPath, 'utf8');
+              const diffMatch = props.match(/^difficulty=(.*)$/m);
+              if (diffMatch) serverProcess.stdin.write(`difficulty ${diffMatch[1].trim()}\r\n`);
+              const gmMatch = props.match(/^gamemode=(.*)$/m);
+              if (gmMatch) serverProcess.stdin.write(`defaultgamemode ${gmMatch[1].trim()}\r\n`);
+            }
+          } catch (e) {}
         }
       });
       serverProcess.stderr.on('data', (data) => {
@@ -278,8 +289,19 @@ app.post('/api/daemon/power/:id', async (req, res) => {
         if (consoleHistory[id].length > 500) consoleHistory[id].shift();
         io.to(`server-${id}`).emit('console-error', line);
         // Paper MC uses Log4J2 which outputs to stderr — check for startup completion here too
-        if (line.includes('Done (') || line.includes('For help, type "help"')) {
+        if ((line.includes('Done (') || line.includes('For help, type "help"')) && !serverProcess.ready) {
+          serverProcess.ready = true;
           io.to(`server-${id}`).emit('status-update', 'online');
+          try {
+            const propsPath = path.join(SERVERS_DIR, id, 'server.properties');
+            if (fs.existsSync(propsPath)) {
+              const props = fs.readFileSync(propsPath, 'utf8');
+              const diffMatch = props.match(/^difficulty=(.*)$/m);
+              if (diffMatch) serverProcess.stdin.write(`difficulty ${diffMatch[1].trim()}\r\n`);
+              const gmMatch = props.match(/^gamemode=(.*)$/m);
+              if (gmMatch) serverProcess.stdin.write(`defaultgamemode ${gmMatch[1].trim()}\r\n`);
+            }
+          } catch (e) {}
         }
       });
       serverProcess.on('error', (err) => {
