@@ -89,4 +89,7 @@ jobs:
           sudo git fetch --all
           sudo git reset --hard origin/main
           sudo npm run build
+          pm2 start ./backend/scheduler.js --name crafthost-scheduler --max-memory-restart 256M || true
+          pm2 start ./backend/control.js --name crafthost-api --max-memory-restart 512M || true
           pm2 restart all
+          pm2 save --force
