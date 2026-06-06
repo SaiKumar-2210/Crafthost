@@ -223,6 +223,11 @@ app.post('/api/daemon/power/:id', async (req, res) => {
       const jarName = path.basename(jarPath);
       const localJarPath = path.join(serverPath, jarName);
       
+      // Ensure any old stopped container with the same name is removed since we no longer use --rm
+      try {
+        require('child_process').execSync(`docker rm -f mc-${id} 2>/dev/null || true`);
+      } catch (err) {}
+
       // Copy JAR to server directory so Docker can access it via the volume mount
       if (!fs.existsSync(localJarPath)) {
         fs.copyFileSync(jarPath, localJarPath);
