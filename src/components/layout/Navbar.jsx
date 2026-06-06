@@ -29,19 +29,8 @@ export default function Navbar() {
         {/* Nav Links */}
         <div className={`navbar-links ${mobileOpen ? 'navbar-links-open' : ''}`}>
           <a href="#features" className="nav-link" onClick={() => setMobileOpen(false)}>Features</a>
-          <Link to="/pricing" className="nav-link" onClick={() => setMobileOpen(false)}>Pricing</Link>
           <a href="#locations" className="nav-link" onClick={() => setMobileOpen(false)}>Locations</a>
-          <a href="#testimonials" className="nav-link" onClick={() => setMobileOpen(false)}>Reviews</a>
-          <div className="nav-link nav-dropdown-trigger hide-mobile">
-            <span>Resources</span>
-            <ChevronDown size={14} />
-            <div className="nav-dropdown">
-              <a href="#" className="nav-dropdown-item">Documentation</a>
-              <a href="#" className="nav-dropdown-item">API Reference</a>
-              <a href="#" className="nav-dropdown-item">Status Page</a>
-              <a href="#" className="nav-dropdown-item">Blog</a>
-            </div>
-          </div>
+          <a href="https://discord.gg/9mUscXNt" target="_blank" rel="noopener noreferrer" className="nav-link" onClick={() => setMobileOpen(false)}>Discord</a>
         </div>
 
         {/* Actions */}

@@ -350,7 +350,11 @@ export default function DeployPage() {
                     </div>
                     <div className={`timeline-item ${getTimelineClass('starting_vm', jobStatus?.status)}`}>
                       <div className="timeline-icon">{getTimelineIcon('starting_vm', jobStatus?.status)}</div>
-                      <div className="timeline-text">Starting VM & executing cloud-init</div>
+                      <div className="timeline-text">
+                        {jobStatus?.status === 'starting_vm' && jobStatus?.message 
+                          ? jobStatus.message 
+                          : `Starting VM & executing cloud-init`}
+                      </div>
                     </div>
                     <div className={`timeline-item ${getTimelineClass('deploying_server', jobStatus?.status)}`}>
                       <div className="timeline-icon">{getTimelineIcon('deploying_server', jobStatus?.status)}</div>
@@ -379,9 +383,14 @@ export default function DeployPage() {
                       </button>
                     )}
                     {jobStatus?.status === 'failed' && (
-                      <button className="btn btn-secondary" onClick={() => { setStep(3); setIsDeploying(false); }}>
-                        Back to Settings
-                      </button>
+                      <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                        <button className="btn btn-primary" onClick={() => { setDeployJobId(null); setJobStatus(null); setIsDeploying(false); handleDeploy(); }}>
+                          <Zap size={16} /> Retry Deployment
+                        </button>
+                        <button className="btn btn-secondary" onClick={() => { setStep(3); setIsDeploying(false); }}>
+                          Back to Settings
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>

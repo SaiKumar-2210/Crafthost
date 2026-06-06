@@ -2,18 +2,8 @@ import { MapPin, Globe } from 'lucide-react'
 import './Locations.css'
 
 const locations = [
-  { name: 'New York', region: 'US East', x: '26%', y: '38%', ping: '12ms' },
-  { name: 'Los Angeles', region: 'US West', x: '14%', y: '40%', ping: '18ms' },
-  { name: 'Dallas', region: 'US Central', x: '20%', y: '42%', ping: '15ms' },
-  { name: 'London', region: 'EU West', x: '47%', y: '30%', ping: '8ms' },
-  { name: 'Frankfurt', region: 'EU Central', x: '50%', y: '31%', ping: '10ms' },
-  { name: 'Helsinki', region: 'EU North', x: '54%', y: '24%', ping: '14ms' },
-  { name: 'Singapore', region: 'Asia SE', x: '74%', y: '56%', ping: '22ms' },
-  { name: 'Tokyo', region: 'Asia East', x: '82%', y: '38%', ping: '16ms' },
-  { name: 'Sydney', region: 'Oceania', x: '83%', y: '72%', ping: '20ms' },
-  { name: 'São Paulo', region: 'S. America', x: '30%', y: '68%', ping: '25ms' },
-  { name: 'Mumbai', region: 'Asia South', x: '66%', y: '48%', ping: '18ms' },
-  { name: 'Johannesburg', region: 'Africa', x: '53%', y: '70%', ping: '28ms' },
+  { name: 'Mumbai', region: 'India', x: '66%', y: '48%', ping: '18ms' },
+  { name: 'Seoul', region: 'Korea', x: '80%', y: '35%', ping: '12ms' },
 ]
 
 export default function Locations() {
@@ -30,8 +20,7 @@ export default function Locations() {
             <span className="text-gradient"> Everywhere</span>
           </h2>
           <p className="section-subtitle">
-            12 data centers across 6 continents. Choose the location
-            closest to your players for the lowest possible ping.
+            Currently available in India and Korea for the best regional performance and lowest possible ping.
           </p>
         </div>
 

@@ -28,8 +28,8 @@ const features = [
   },
   {
     icon: Globe,
-    title: '12 Global Locations',
-    description: 'Servers in North America, Europe, Asia, and Australia. Choose the closest location for minimal ping.',
+    title: '2 Global Locations',
+    description: 'Servers in India and Korea. Choose the closest location for minimal ping.',
     color: 'hsl(38, 92%, 50%)',
     tag: 'Global'
   },

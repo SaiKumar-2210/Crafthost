@@ -15,7 +15,7 @@ export default function Footer() {
               <span className="logo-text">CraftHost</span>
             </div>
             <p className="footer-desc">
-              Premium Minecraft server hosting with instant deployment,
+              Minecraft server hosting with instant deployment,
               enterprise-grade DDoS protection, and 24/7 expert support.
             </p>
             <div className="footer-socials">
@@ -29,17 +29,8 @@ export default function Footer() {
           <div className="footer-col">
             <h4 className="footer-heading">Product</h4>
             <a href="#features" className="footer-link">Features</a>
-            <a href="#pricing" className="footer-link">Pricing</a>
             <a href="#locations" className="footer-link">Server Locations</a>
             <a href="#" className="footer-link">Mod Support</a>
-          </div>
-
-          <div className="footer-col">
-            <h4 className="footer-heading">Resources</h4>
-            <a href="#" className="footer-link">Documentation</a>
-            <a href="#" className="footer-link">API Reference</a>
-            <a href="#" className="footer-link">Status Page</a>
-            <a href="#" className="footer-link">Blog</a>
           </div>
 
           <div className="footer-col">

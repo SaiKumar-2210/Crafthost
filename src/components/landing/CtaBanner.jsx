@@ -21,11 +21,10 @@ export default function CtaBanner() {
               scale instantly, and never worry about lag again.
             </p>
             <div className="cta-actions">
-              <a href="#pricing" className="btn btn-primary btn-lg" id="cta-get-started">
-                <span>Get Started Free</span>
+              <a href="/login" className="btn btn-primary btn-lg" id="cta-get-started">
+                <span>Get Started</span>
                 <ArrowRight size={18} />
               </a>
-              <p className="cta-note">No credit card required · 7-day free trial</p>
             </div>
           </div>
         </div>

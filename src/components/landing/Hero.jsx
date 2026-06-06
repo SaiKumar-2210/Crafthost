@@ -44,14 +44,14 @@ export default function Hero() {
 
         {/* Subtitle */}
         <p className="hero-subtitle animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
-          Premium hosting powered by enterprise hardware. Instant setup, automatic
-          backups, DDoS protection, and full mod support — starting at just $4.99/mo.
+          Minecraft hosting powered by enterprise hardware. Instant setup, automatic
+          backups, DDoS protection, and full mod support.
         </p>
 
         {/* CTA Buttons */}
         <div className="hero-actions animate-fade-in-up" style={{ animationDelay: '0.25s' }}>
-          <a href="#pricing" className="btn btn-primary btn-lg" id="hero-cta-primary">
-            <span>Get Started Free</span>
+          <a href="/login" className="btn btn-primary btn-lg" id="hero-cta-primary">
+            <span>Get Started</span>
             <ArrowRight size={18} />
           </a>
           <a href="#features" className="btn btn-secondary btn-lg" id="hero-cta-secondary">
@@ -73,7 +73,7 @@ export default function Hero() {
           </div>
           <div className="hero-stat-divider" />
           <div className="hero-stat">
-            <span className="hero-stat-value">12</span>
+            <span className="hero-stat-value">2</span>
             <span className="hero-stat-label">Global Locations</span>
           </div>
           <div className="hero-stat-divider" />
