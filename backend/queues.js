@@ -6,10 +6,7 @@ const { Queue } = require('bullmq');
 
 const REDIS_HOST = process.env.REDIS_HOST || '127.0.0.1';
 let REDIS_PORT = parseInt(process.env.REDIS_PORT || '6379', 10);
-
-// Hotfix: Control Plane natively runs Redis on 6379, but older .env files 
-// may have REDIS_PORT=6380 from local testing. Force 6379 in production.
-if (process.env.NODE_ENV === 'production' && REDIS_PORT === 6380) {
+if (REDIS_PORT === 6380) {
   REDIS_PORT = 6379;
 }
 
