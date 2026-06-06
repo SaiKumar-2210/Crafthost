@@ -231,7 +231,7 @@ app.post('/api/daemon/power/:id', async (req, res) => {
       const rconCreds = getRconCredentials(id);
       
       const dockerArgs = [
-        'run', '-i', '--rm',
+        'run', '-i',
         `--name=mc-${id}`,
         '-p', `${meta.port}:${meta.port}`,
         '-v', `${serverPath}:/data`,
