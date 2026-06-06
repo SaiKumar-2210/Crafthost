@@ -681,6 +681,15 @@ app.get('/api/system/daemon-package', requireSystemSecret, (req, res) => {
   res.send(fs.readFileSync(pkgPath, 'utf8'));
 });
 
+// Temporary debug endpoint to fetch pm2 logs
+app.get('/api/system/debug-logs', (req, res) => {
+  const { exec } = require('child_process');
+  exec('pm2 logs --lines 200 --nostream', (err, stdout, stderr) => {
+    res.setHeader('Content-Type', 'text/plain');
+    res.send(stdout + '\n' + stderr);
+  });
+});
+
 // Azure Region Discovery
 app.get('/api/system/azure-regions', protect, async (req, res) => {
   if (!isAzureConfigured) {
