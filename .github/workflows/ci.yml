@@ -72,7 +72,10 @@ jobs:
         host: ${{ secrets.AZURE_VM_IP }}
         username: ${{ secrets.AZURE_VM_USERNAME }}
         key: ${{ secrets.AZURE_VM_SSH_KEY }}
+        script_stop: true
         script: |
           cd /opt/crafthost-control
-          sudo git pull
+          sudo git fetch --all
+          sudo git reset --hard origin/main
+          sudo npm run build
           pm2 restart all
