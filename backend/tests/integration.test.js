@@ -12,9 +12,15 @@ describe('API Integration Tests', () => {
   let adminToken;
 
   beforeAll(async () => {
+    // Increase timeout for connection setup
+    jest.setTimeout(15000);
+
     // Ensure we are connected
     if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(MONGODB_URI);
+      await mongoose.connect(MONGODB_URI, {
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+      });
     }
     
     // Clear users
@@ -42,7 +48,7 @@ describe('API Integration Tests', () => {
 
     // Promote to admin
     await User.updateOne({ email: 'admin@test.com' }, { role: 'admin' });
-  });
+  }, 20000);
 
   afterAll(async () => {
     await User.deleteMany({ email: /@test\.com$/ });
