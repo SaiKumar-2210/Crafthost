@@ -214,22 +214,47 @@ app.post('/api/daemon/power/:id', async (req, res) => {
     }
     if (runningProcesses[id]) {
       runningProcesses[id].kill('SIGINT');
+      require('child_process').execSync(`docker rm -f mc-${id} || true`);
       await new Promise(r => setTimeout(r, 2000));
       delete runningProcesses[id];
     }
     try {
       const jarPath = await ensureServerJar(meta.versionType, meta.versionNumber);
-      // AIKAR FLAGS INJECTED TO PREVENT AWS KERNEL PANICS!
-      const serverProcess = spawn('java', [
-        '-Xmx800M', '-Xms400M', 
+      const jarName = path.basename(jarPath);
+      const localJarPath = path.join(serverPath, jarName);
+      
+      // Copy JAR to server directory so Docker can access it via the volume mount
+      if (!fs.existsSync(localJarPath)) {
+        fs.copyFileSync(jarPath, localJarPath);
+      }
+      
+      const rconCreds = getRconCredentials(id);
+      
+      const dockerArgs = [
+        'run', '-i', '--rm',
+        `--name=mc-${id}`,
+        '-p', `${meta.port}:${meta.port}`,
+        '-v', `${serverPath}:/data`,
+        '-w', '/data'
+      ];
+      
+      if (rconCreds) {
+        dockerArgs.push('-p', `${rconCreds.port}:${rconCreds.port}`);
+      }
+      
+      dockerArgs.push(
+        'eclipse-temurin:21-jre-alpine',
+        'java', '-Xmx800M', '-Xms400M', 
         '-XX:+UseG1GC', '-XX:MaxGCPauseMillis=200', '-XX:MaxMetaspaceSize=256m',
-        '-jar', jarPath, 'nogui'
-      ], { cwd: serverPath });
+        '-jar', `/data/${jarName}`, 'nogui'
+      );
+
+      const serverProcess = spawn('docker', dockerArgs);
       
       runningProcesses[id] = serverProcess;
       processStartTimes[id] = Date.now();
       statsHistory[id] = []; // Reset stats history
-      console.log(`[Daemon] Java process ${serverProcess.pid} started for ${id}`);
+      console.log(`[Daemon] Docker container mc-${id} started for ${id}`);
 
       serverProcess.stdout.on('data', (data) => {
         const line = data.toString();
@@ -269,6 +294,9 @@ app.post('/api/daemon/power/:id', async (req, res) => {
   } else if (action === 'stop') {
     if (runningProcesses[id]) {
       runningProcesses[id].stdin.write('stop\r\n');
+    } else {
+      // Fallback: if daemon restarted but container is still running
+      require('child_process').exec(`docker stop mc-${id} -t 30`);
     }
     res.json({ success: true, status: 'offline' });
   } else if (action === 'kill') {
@@ -277,6 +305,7 @@ app.post('/api/daemon/power/:id', async (req, res) => {
       delete runningProcesses[id];
       delete processStartTimes[id];
     }
+    require('child_process').exec(`docker rm -f mc-${id}`);
     res.json({ success: true, status: 'offline' });
   }
 });
@@ -287,6 +316,7 @@ app.post('/api/daemon/kill-all', (req, res) => {
   for (const id of Object.keys(runningProcesses)) {
     try {
       runningProcesses[id].kill('SIGKILL');
+      require('child_process').exec(`docker rm -f mc-${id}`);
       killed.push(id);
     } catch { /* ignore */ }
     delete runningProcesses[id];

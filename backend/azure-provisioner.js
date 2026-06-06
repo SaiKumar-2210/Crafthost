@@ -115,6 +115,11 @@ apt-get install -y curl wget software-properties-common apt-transport-https ca-c
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt-get install -y nodejs
 
+# Install Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sh get-docker.sh
+usermod -aG docker root
+
 # Verify installations
 node -v
 npm -v
