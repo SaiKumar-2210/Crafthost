@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useState, useContext, useEffect, useRef } from 'react'
+import { createContext, useState, useContext, useEffect, useRef, useCallback } from 'react'
 import { io } from 'socket.io-client'
 
 const AppContext = createContext()
@@ -60,12 +60,12 @@ export function AppProvider({ children }) {
     serversRef.current = servers
   }, [servers])
 
-  const getAuthHeaders = () => {
+  const getAuthHeaders = useCallback(() => {
     return {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${localStorage.getItem('crafthost_token')}`
     }
-  }
+  }, []);
 
   // Fetch servers from real backend
   const fetchServers = async () => {

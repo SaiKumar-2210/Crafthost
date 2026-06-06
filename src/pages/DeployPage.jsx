@@ -61,7 +61,7 @@ export default function DeployPage() {
         const data = await res.json()
         if (data.regions && data.regions.length > 0) {
           setRegions(data.regions)
-          setAzureLocation(data.regions[0].value)
+          setAzureLocation(prev => prev || data.regions[0].value)
         } else {
           setRegions([])
         }
