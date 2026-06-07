@@ -35,7 +35,7 @@ export default function Sidebar() {
     <aside className={`sidebar ${collapsed ? 'sidebar-collapsed' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-logo">
-          <img src={logoImg} alt="CraftHost Logo" style={{ height: '24px', marginRight: '8px', borderRadius: '4px' }} />
+          <img src={logoImg} alt="CraftHost Logo" style={{ height: '32px', marginRight: '8px', borderRadius: '4px' }} />
           {!collapsed && <span className="logo-text">CraftHost</span>}
         </div>
         <button 

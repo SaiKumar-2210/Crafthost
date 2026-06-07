@@ -21,7 +21,7 @@ export default function Navbar() {
       <div className="navbar-inner container">
         {/* Logo */}
         <Link to="/" className="navbar-logo" id="nav-logo">
-          <img src={logoImg} alt="CraftHost Logo" style={{ height: '32px', marginRight: '8px', borderRadius: '4px' }} />
+          <img src={logoImg} alt="CraftHost Logo" style={{ height: '42px', marginRight: '8px', borderRadius: '4px' }} />
           <span className="logo-text">CraftHost</span>
         </Link>
 

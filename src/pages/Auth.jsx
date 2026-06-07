@@ -55,7 +55,7 @@ export default function Auth({ type = 'login' }) {
   return (
     <div className="auth-page">
       <Link to="/" className="auth-back-logo">
-        <img src={logoImg} alt="CraftHost Logo" style={{ height: '32px', marginRight: '8px', borderRadius: '4px' }} />
+        <img src={logoImg} alt="CraftHost Logo" style={{ height: '42px', marginRight: '8px', borderRadius: '4px' }} />
         <span className="logo-text">CraftHost</span>
       </Link>
       
