@@ -1,5 +1,6 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { Server, Grid, TerminalSquare, FolderOpen, Users, HardDrive, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Plus, Shield } from 'lucide-react'
+import { Server, Grid, TerminalSquare, FolderOpen, Users, HardDrive, Settings, CreditCard, ChevronLeft, ChevronRight, LogOut, Plus, Shield, Activity, Play, Database } from 'lucide-react'
+import logoImg from '../../assets/logo.jpg'
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import './Sidebar.css'
@@ -34,7 +35,7 @@ export default function Sidebar() {
     <aside className={`sidebar ${collapsed ? 'sidebar-collapsed' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-logo">
-          <Server size={24} className="text-secondary" />
+          <img src={logoImg} alt="CraftHost Logo" style={{ height: '24px', marginRight: '8px', borderRadius: '4px' }} />
           {!collapsed && <span className="logo-text">CraftHost</span>}
         </div>
         <button 

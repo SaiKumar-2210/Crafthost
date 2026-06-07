@@ -1,4 +1,5 @@
 import { Server, ExternalLink, Send, MessageSquare } from 'lucide-react'
+import logoImg from '../../assets/logo.jpg'
 import './Footer.css'
 
 export default function Footer() {
@@ -9,9 +10,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="footer-brand">
             <div className="navbar-logo" style={{ marginBottom: '1rem' }}>
-              <div className="logo-icon">
-                <Server size={20} />
-              </div>
+              <img src={logoImg} alt="CraftHost Logo" style={{ height: '32px', marginRight: '8px', borderRadius: '4px' }} />
               <span className="logo-text">CraftHost</span>
             </div>
             <p className="footer-desc">

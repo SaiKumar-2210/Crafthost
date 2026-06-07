@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import logoImg from '../../assets/logo.jpg'
 import { Menu, X, Server, ChevronDown } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import './Navbar.css'
@@ -20,9 +21,7 @@ export default function Navbar() {
       <div className="navbar-inner container">
         {/* Logo */}
         <Link to="/" className="navbar-logo" id="nav-logo">
-          <div className="logo-icon">
-            <Server size={22} />
-          </div>
+          <img src={logoImg} alt="CraftHost Logo" style={{ height: '32px', marginRight: '8px', borderRadius: '4px' }} />
           <span className="logo-text">CraftHost</span>
         </Link>
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Server, ArrowRight, Mail, Lock, User } from 'lucide-react'
+import logoImg from '../assets/logo.jpg'
 import { useApp } from '../context/AppContext'
 import './Auth.css'
 
@@ -54,7 +55,7 @@ export default function Auth({ type = 'login' }) {
   return (
     <div className="auth-page">
       <Link to="/" className="auth-back-logo">
-        <Server size={24} className="text-secondary" />
+        <img src={logoImg} alt="CraftHost Logo" style={{ height: '32px', marginRight: '8px', borderRadius: '4px' }} />
         <span className="logo-text">CraftHost</span>
       </Link>
       

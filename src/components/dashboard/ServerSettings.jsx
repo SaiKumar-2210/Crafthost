@@ -8,7 +8,7 @@ export default function ServerSettings() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { getAuthHeaders, API_BASE, servers } = useApp()
-  const [activeTab, setActiveTab] = useState('general')
+  const [activeTab, setActiveTab] = useState('game')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [settings, setSettings] = useState(null)
@@ -180,7 +180,6 @@ export default function ServerSettings() {
     <div className="server-settings">
       <div className="settings-sidebar">
         <nav className="settings-nav">
-          <button className={`settings-nav-item ${activeTab === 'general' ? 'active' : ''}`} onClick={() => setActiveTab('general')}>General Information</button>
           <button className={`settings-nav-item ${activeTab === 'game' ? 'active' : ''}`} onClick={() => setActiveTab('game')}>Game Settings</button>
           <button className={`settings-nav-item ${activeTab === 'network' ? 'active' : ''}`} onClick={() => setActiveTab('network')}>Network & Ports</button>
           <button className={`settings-nav-item ${activeTab === 'world' ? 'active' : ''}`} onClick={() => setActiveTab('world')}>World Management</button>
@@ -284,7 +283,7 @@ export default function ServerSettings() {
             </div>
           </div>
         ) : activeTab === 'network' ? (
-          <form onSubmit={handleSubmit} className="settings-form">
+          <form onSubmit={handleSubmit} className="settings-form" key="network">
             <div className="settings-header">
               <div>
                 <h2 className="settings-title">Network & Ports</h2>
@@ -313,7 +312,7 @@ export default function ServerSettings() {
             </div>
           </form>
         ) : activeTab === 'world' ? (
-          <form onSubmit={handleSubmit} className="settings-form">
+          <form onSubmit={handleSubmit} className="settings-form" key="world">
             <div className="settings-header">
               <div>
                 <h2 className="settings-title">World Management</h2>
@@ -352,7 +351,7 @@ export default function ServerSettings() {
             </div>
           </form>
         ) : activeTab === 'security' ? (
-          <form onSubmit={handleSubmit} className="settings-form">
+          <form onSubmit={handleSubmit} className="settings-form" key="security">
             <div className="settings-header">
               <div>
                 <h2 className="settings-title">Security</h2>
@@ -399,7 +398,7 @@ export default function ServerSettings() {
             </div>
           </form>
         ) : (
-          <form onSubmit={handleSubmit} className="settings-form">
+          <form onSubmit={handleSubmit} className="settings-form" key="game">
             <div className="settings-header">
               <div>
                 <h2 className="settings-title">Game Settings</h2>
