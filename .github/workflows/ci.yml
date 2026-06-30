@@ -84,23 +84,28 @@ jobs:
         username: ${{ secrets.AWS_VM_USERNAME }}
         key: ${{ secrets.AWS_VM_SSH_KEY }}
         script_stop: true
+        command_timeout: 10m
         script: |
+          set -e
+
+          # 1. Install git if missing
           if ! command -v git &> /dev/null; then
-            sudo apt-get update && sudo apt-get install -y git || sudo yum install -y git
+            sudo yum install -y git || sudo apt-get update && sudo apt-get install -y git
           fi
-          if command -v yum &> /dev/null; then
-            NODE_MAJ=$(node -v 2>/dev/null | grep -oE '^v[0-9]+' | tr -d 'v' || echo 0)
-            if [ "$NODE_MAJ" -lt 20 ]; then
-              sudo yum remove -y nodejs
+
+          # 2. Ensure Node.js 20+ is installed
+          NODE_MAJ=$(node -v 2>/dev/null | grep -oE '^v[0-9]+' | tr -d 'v' || echo 0)
+          if [ "$NODE_MAJ" -lt 20 ]; then
+            if command -v yum &> /dev/null; then
+              sudo yum remove -y nodejs nodejs18 2>/dev/null || true
               sudo yum install -y nodejs20
-            fi
-          fi
-          if ! command -v npm &> /dev/null; then
-            if command -v apt-get &> /dev/null; then
+            else
               curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
               sudo apt-get install -y nodejs
             fi
           fi
+
+          # 3. Clone or pull the repo
           if [ ! -d "/opt/crafthost-control" ]; then
             sudo git clone https://github.com/${{ github.repository }}.git /opt/crafthost-control
           else
@@ -108,12 +113,22 @@ jobs:
             sudo git fetch --all
             sudo git reset --hard origin/main
           fi
+
+          # 4. Fix ownership so npm doesn't need sudo
+          sudo chown -R $(whoami):$(whoami) /opt/crafthost-control
+
+          # 5. Install dependencies (no sudo needed now)
           cd /opt/crafthost-control
-          sudo npm install
-          cd backend && sudo npm install && cd ..
-          sudo npm run build
+          npm install
+          cd backend && npm install && cd ..
+
+          # 6. Build frontend
+          npm run build
+
+          # 7. Install and run pm2
           sudo npm install -g pm2
-          npx pm2 start ./backend/scheduler.js --name crafthost-scheduler --max-memory-restart 256M || true
-          npx pm2 start ./backend/control.js --name crafthost-api --max-memory-restart 512M || true
-          npx pm2 restart all
-          npx pm2 save --force
+          pm2 delete all 2>/dev/null || true
+          pm2 start ./backend/control.js --name crafthost-api --max-memory-restart 512M
+          pm2 start ./backend/scheduler.js --name crafthost-scheduler --max-memory-restart 256M
+          pm2 save --force
+          sudo env PATH=$PATH:$(which node | xargs dirname) pm2 startup systemd -u $(whoami) --hp $HOME 2>/dev/null || true
