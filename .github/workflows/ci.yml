@@ -88,12 +88,17 @@ jobs:
           if ! command -v git &> /dev/null; then
             sudo apt-get update && sudo apt-get install -y git || sudo yum install -y git
           fi
+          if command -v yum &> /dev/null; then
+            NODE_MAJ=$(node -v 2>/dev/null | grep -oE '^v[0-9]+' | tr -d 'v' || echo 0)
+            if [ "$NODE_MAJ" -lt 20 ]; then
+              sudo yum remove -y nodejs
+              sudo yum install -y nodejs20
+            fi
+          fi
           if ! command -v npm &> /dev/null; then
             if command -v apt-get &> /dev/null; then
               curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
               sudo apt-get install -y nodejs
-            elif command -v yum &> /dev/null; then
-              sudo yum install -y nodejs20 || sudo yum install -y nodejs
             fi
           fi
           if [ ! -d "/opt/crafthost-control" ]; then
