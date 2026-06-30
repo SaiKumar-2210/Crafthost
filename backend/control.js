@@ -24,12 +24,12 @@ const { connectDB, User, ServerPermission, VMNode, GameServer, DeployJob } = req
 const { router: authRouter, protect } = require('./routes/auth');
 const { orchestrationQueue } = require('./queues');
 const {
-  isAzureConfigured,
-  startAzureVM,
-  getVMPublicIP,
+  isAwsConfigured,
+  startAwsVM,
+  getAwsVMPublicIP,
   SAFE_REGION_METADATA,
   ALLOWED_REGIONS,
-} = require('./azure-provisioner');
+} = require('./aws-provisioner');
 
 const app = express();
 const server = http.createServer(app);
@@ -222,7 +222,7 @@ app.get('/api/servers', protect, async (req, res) => {
         versionType: gs.versionType,
         versionNumber: gs.versionNumber,
         node: gs.region,
-        azureLocation: gs.region,
+        awsLocation: gs.region,
         ownerId: gs.ownerId.toString(),
         uptime,
         players: '0/20',
@@ -238,13 +238,13 @@ app.get('/api/servers', protect, async (req, res) => {
 
 // 2. Deploy Server (Async — enqueue job, return 202)
 app.post('/api/servers/deploy', protect, async (req, res) => {
-  const { name, azureLocation, versionType = 'Paper', versionNumber = '1.21.11' } = req.body;
+  const { name, awsLocation, versionType = 'Paper', versionNumber = '1.21.11' } = req.body;
 
   // Validate region — reject immediately if not in allowed list
-  if (!azureLocation || !ALLOWED_REGIONS.includes(azureLocation)) {
+  if (!awsLocation || !ALLOWED_REGIONS.includes(awsLocation)) {
     const allowed = ALLOWED_REGIONS.join(', ');
     return res.status(400).json({
-      error: `Invalid region "${azureLocation || 'none'}". Allowed regions: ${allowed}`
+      error: `Invalid region "${awsLocation || 'none'}". Allowed regions: ${allowed}`
     });
   }
 
@@ -259,12 +259,12 @@ app.post('/api/servers/deploy', protect, async (req, res) => {
     const job = await orchestrationQueue.add('deploy-server', {
       userId: req.user._id.toString(),
       name: name || 'New SMP Server',
-      region: azureLocation,
+      region: awsLocation,
       versionType,
       versionNumber,
     });
 
-    console.log(`[Control] Deploy job ${job.id} queued for user ${req.user._id} in ${azureLocation}`);
+    console.log(`[Control] Deploy job ${job.id} queued for user ${req.user._id} in ${awsLocation}`);
 
     res.status(202).json({
       jobId: job.id,
@@ -285,21 +285,21 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
     const vmNode = gs.vmName ? await VMNode.findOne({ vmName: gs.vmName }) : null;
 
     // If starting and VM is deallocated, boot it first
-    if (action === 'start' && vmNode && isAzureConfigured) {
+    if (action === 'start' && vmNode && isAwsConfigured) {
       if (vmNode.status === 'deallocated' || vmNode.status === 'unhealthy') {
         console.log(`[Control] Starting deallocated VM ${vmNode.vmName} for server ${id}...`);
-        io.to(`server-${id}`).emit('console-log', `\r\n[System] VM is offline. Booting Azure VM '${vmNode.vmName}'... This will take ~45 seconds.\r\n`);
+        io.to(`server-${id}`).emit('console-log', `\r\n[System] VM is offline. Booting AWS VM '${vmNode.vmName}'... This will take ~45 seconds.\r\n`);
         
-        await startAzureVM(vmNode.vmName);
+        await startAwsVM(vmNode.vmName, vmNode.region);
         vmNode.status = 'starting';
         await vmNode.save();
-        io.to(`server-${id}`).emit('console-log', `[System] VM successfully started in Azure. Waiting for public IP allocation...\r\n`);
+        io.to(`server-${id}`).emit('console-log', `[System] VM successfully started in AWS. Waiting for public IP allocation...\r\n`);
 
         // Wait for IP
         let resolvedIp = null;
         for (let attempt = 1; attempt <= 10; attempt++) {
           await new Promise(r => setTimeout(r, 4000));
-          resolvedIp = await getVMPublicIP(vmNode.vmName);
+          resolvedIp = await getAwsVMPublicIP(vmNode.vmName, vmNode.region);
           if (resolvedIp) break;
         }
         if (!resolvedIp) {
@@ -359,7 +359,7 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
     }
 
     // Auto-deallocation check for stop action
-    if (action === 'stop' && vmNode && isAzureConfigured) {
+    if (action === 'stop' && vmNode && isAwsConfigured) {
       setTimeout(async () => {
         try {
           const statusRes = await fetch(`${nodeUrl}/api/daemon/status`, {
@@ -370,8 +370,8 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
 
           if (activeCount === 0) {
             console.log(`[Control] VM ${vmNode.vmName} has 0 running servers. Triggering deallocation...`);
-            const { deallocateAzureVM } = require('./azure-provisioner');
-            await deallocateAzureVM(vmNode.vmName);
+            const { deallocateAwsVM } = require('./aws-provisioner');
+            await deallocateAwsVM(vmNode.vmName, vmNode.region);
             vmNode.status = 'deallocated';
             await vmNode.save();
           }
@@ -690,9 +690,9 @@ app.get('/api/system/debug-logs', (req, res) => {
   });
 });
 
-// Azure Region Discovery
-app.get('/api/system/azure-regions', protect, async (req, res) => {
-  if (!isAzureConfigured) {
+// AWS Region Discovery
+app.get('/api/system/aws-regions', protect, async (req, res) => {
+  if (!isAwsConfigured) {
     return res.json({ regions: [] });
   }
   try {
@@ -702,7 +702,7 @@ app.get('/api/system/azure-regions', protect, async (req, res) => {
     
     // Fallback if none found (e.g. before initial sync), show what we statically expect
     if (availableRegions.length === 0) {
-      const fallbackRegions = SAFE_REGION_METADATA.filter(r => ['centralindia', 'koreacentral'].includes(r.value));
+      const fallbackRegions = SAFE_REGION_METADATA.filter(r => ['ap-south-1', 'ap-northeast-2'].includes(r.value));
       return res.json({ regions: fallbackRegions });
     }
 
@@ -942,7 +942,7 @@ const PORT = process.env.PORT || 3000;
 if (process.env.NODE_ENV !== 'test') {
   server.listen(PORT, () => {
     console.log(`🚀 CraftHost Control Plane running on port ${PORT}`);
-    console.log(`   Mode: ${isAzureConfigured ? 'Azure Cloud' : 'Local Development'}`);
+    console.log(`   Mode: ${isAwsConfigured ? 'AWS Cloud' : 'Local Development'}`);
   });
 }
 

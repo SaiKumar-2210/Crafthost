@@ -44,8 +44,8 @@ jobs:
       env:
         # These are used for the integration tests. 
         # For actual production, set these in GitHub Repository Secrets!
-        MONGODB_URI: ${{ secrets.MONGODB_URI || 'mongodb+srv://saikumar22102005:projectstartup@cluster0.spzm4pc.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0' }}
-        JWT_SECRET: ${{ secrets.JWT_SECRET || 'test_jwt_secret_12345' }}
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET  }}
         NODE_ENV: test
 
   frontend-build:

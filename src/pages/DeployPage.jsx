@@ -41,7 +41,7 @@ export default function DeployPage() {
   const [step, setStep] = useState(1)
   const [serverName, setServerName] = useState('')
   const [version, setVersion] = useState('1.21.11')
-  const [azureLocation, setAzureLocation] = useState('')
+  const [awsLocation, setAwsLocation] = useState('')
   const [isDeploying, setIsDeploying] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [regions, setRegions] = useState([])
@@ -51,22 +51,22 @@ export default function DeployPage() {
   const [deployJobId, setDeployJobId] = useState(null)
   const [jobStatus, setJobStatus] = useState(null)
 
-  // Fetch safe Azure regions from backend on mount
+  // Fetch safe AWS regions from backend on mount
   useEffect(() => {
     const fetchRegions = async () => {
       try {
-        const res = await fetch(`${API_BASE}/system/azure-regions`, {
+        const res = await fetch(`${API_BASE}/system/aws-regions`, {
           headers: getAuthHeaders()
         })
         const data = await res.json()
         if (data.regions && data.regions.length > 0) {
           setRegions(data.regions)
-          setAzureLocation(prev => prev || data.regions[0].value)
+          setAwsLocation(prev => prev || data.regions[0].value)
         } else {
           setRegions([])
         }
       } catch (err) {
-        console.error('Failed to fetch Azure regions:', err)
+        console.error('Failed to fetch AWS regions:', err)
         setRegions([])
       } finally {
         setRegionsLoading(false)
@@ -93,7 +93,7 @@ export default function DeployPage() {
   }, [step, deployJobId, getJobStatus])
 
   const selectedVersion = versions.find(v => v.id === version)
-  const selectedRegion = regions.find(r => r.value === azureLocation)
+  const selectedRegion = regions.find(r => r.value === awsLocation)
 
   // Filter regions by search query
   const visibleRegions = regions.filter(r => {
@@ -115,7 +115,7 @@ export default function DeployPage() {
   const handleDeploy = async () => {
     setIsDeploying(true)
     try {
-      const res = await deployServer(serverName || 'CraftHost SMP Server', version, azureLocation)
+      const res = await deployServer(serverName || 'CraftHost SMP Server', version, awsLocation)
       if (res.error) {
         alert(res.error)
         setIsDeploying(false)
@@ -259,14 +259,14 @@ export default function DeployPage() {
               <div className="wizard-step-content fade-in">
                 <div className="step-hero">
                   <div className="step-icon"><Globe2 size={32} /></div>
-                  <h1>Select Azure Region</h1>
+                  <h1>Select AWS Region</h1>
                   <p>Deploy your VM exactly where your players are located.</p>
                 </div>
 
                 {regionsLoading ? (
                   <div className="regions-loading">
                     <Loader2 size={32} className="spin" />
-                    <p>Fetching available Azure regions for your subscription...</p>
+                    <p>Fetching available AWS regions for your subscription...</p>
                   </div>
                 ) : (
                   <>
@@ -292,15 +292,15 @@ export default function DeployPage() {
                               {group.items.map(r => (
                                 <div
                                   key={r.value}
-                                  className={`region-card ${azureLocation === r.value ? 'active' : ''}`}
-                                  onClick={() => setAzureLocation(r.value)}
+                                  className={`region-card ${awsLocation === r.value ? 'active' : ''}`}
+                                  onClick={() => setAwsLocation(r.value)}
                                 >
                                   <div className="region-flag">{r.country}</div>
                                   <div className="region-info">
                                     <div className="region-label">{r.label}</div>
                                     <div className="region-city"><MapPin size={10} /> {r.city}</div>
                                   </div>
-                                  {azureLocation === r.value && (
+                                  {awsLocation === r.value && (
                                     <div className="region-check"><Check size={16} /></div>
                                   )}
                                 </div>

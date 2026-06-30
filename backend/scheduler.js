@@ -14,11 +14,11 @@ const { Worker } = require('bullmq');
 const { redisConnection, reaperQueue } = require('./queues');
 const { connectDB, VMNode, GameServer, DeployJob, ServerPermission } = require('./db');
 const {
-  isAzureConfigured,
-  startAzureVM,
-  deallocateAzureVM,
-  getVMPublicIP,
-} = require('./azure-provisioner');
+  isAwsConfigured,
+  startAwsVM,
+  deallocateAwsVM,
+  getAwsVMPublicIP,
+} = require('./aws-provisioner');
 
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
@@ -48,10 +48,10 @@ async function daemonRequest(ip, method, path, body) {
   return res;
 }
 
-async function waitForIP(vmName, maxAttempts = 15, intervalMs = 4000) {
+async function waitForIP(vmName, region, maxAttempts = 15, intervalMs = 4000) {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     await new Promise(r => setTimeout(r, intervalMs));
-    const ip = await getVMPublicIP(vmName);
+    const ip = await getAwsVMPublicIP(vmName, region);
     if (ip) return ip;
     console.log(`[Scheduler] Waiting for IP (attempt ${attempt}/${maxAttempts})...`);
   }
@@ -87,7 +87,7 @@ async function findVM(region, jobId) {
     await updateJob(jobId, { status: 'starting_vm', progress: 25, message: `Recovering VM ${vm.vmName}...` });
 
     // Try to resolve its IP and reach the daemon
-    const resolvedIp = await waitForIP(vm.vmName, 5, 3000);
+    const resolvedIp = await waitForIP(vm.vmName, region, 5, 3000);
     if (resolvedIp) {
       vm.ip = resolvedIp;
       vm.status = 'running';
@@ -100,13 +100,13 @@ async function findVM(region, jobId) {
 
     // IP not available — try restarting the VM
     console.log(`[Scheduler] Could not reach ${vm.vmName}, attempting restart...`);
-    if (isAzureConfigured) {
+    if (isAwsConfigured) {
       try {
-        await startAzureVM(vm.vmName);
+        await startAwsVM(vm.vmName, region);
         vm.status = 'starting';
         await vm.save();
 
-        const ip = await waitForIP(vm.vmName, 10);
+        const ip = await waitForIP(vm.vmName, region, 10);
         if (ip) {
           vm.ip = ip;
           vm.status = 'running';
@@ -128,15 +128,14 @@ async function findVM(region, jobId) {
     console.log(`[Scheduler] Found deallocated VM to restart: ${vm.vmName}`);
     await updateJob(jobId, { status: 'starting_vm', progress: 30, message: `Starting VM ${vm.vmName}...` });
 
-    if (isAzureConfigured) {
+    if (isAwsConfigured) {
       try {
-        await startAzureVM(vm.vmName);
+        await startAwsVM(vm.vmName, region);
       } catch (err) {
-        const isNotFound = err.statusCode === 404 || 
-                           err.code === 'ResourceNotFound' || 
+        const isNotFound = err.name === 'InvalidInstanceID.NotFound' || 
                            (err.message || '').toLowerCase().includes('not found');
         if (isNotFound) {
-          console.warn(`[Scheduler] Ghost VM: ${vm.vmName} not found in Azure. Removing stale record.`);
+          console.warn(`[Scheduler] Ghost VM: ${vm.vmName} not found in AWS. Removing stale record.`);
           await VMNode.deleteOne({ _id: vm._id });
           vm = null;
         } else {
@@ -149,7 +148,7 @@ async function findVM(region, jobId) {
       vm.status = 'starting';
       await vm.save();
 
-      const resolvedIp = await waitForIP(vm.vmName, 10);
+      const resolvedIp = await waitForIP(vm.vmName, region, 10);
       if (!resolvedIp) {
         throw new Error(`Failed to resolve IP for VM ${vm.vmName} after restarting.`);
       }
@@ -362,7 +361,7 @@ async function processStopServer(job) {
   }
 
   // Auto-deallocate check after grace period
-  if (isAzureConfigured) {
+  if (isAwsConfigured) {
     await new Promise(r => setTimeout(r, 10000));
     try {
       const statusRes = await daemonRequest(vmNode.ip, 'GET', '/api/daemon/status');
@@ -371,7 +370,7 @@ async function processStopServer(job) {
 
       if (activeCount === 0) {
         console.log(`[Scheduler] VM ${vmNode.vmName} has 0 running servers. Deallocating...`);
-        await deallocateAzureVM(vmNode.vmName);
+        await deallocateAwsVM(vmNode.vmName, vmNode.region);
         vmNode.status = 'deallocated';
         vmNode.activeServersCount = 0;
         await vmNode.save();
@@ -423,13 +422,13 @@ async function processDeleteServer(job) {
     await vmNode.save();
 
     // Auto-deallocate if VM is now empty
-    if (vmNode.activeServersCount === 0 && isAzureConfigured && vmNode.status === 'running') {
+    if (vmNode.activeServersCount === 0 && isAwsConfigured && vmNode.status === 'running') {
       try {
         const statusRes = await daemonRequest(vmNode.ip, 'GET', '/api/daemon/status');
         const statusData = await statusRes.json();
         if (!statusData.running || statusData.running.length === 0) {
           console.log(`[Scheduler] VM ${vmNode.vmName} is now empty. Deallocating...`);
-          await deallocateAzureVM(vmNode.vmName);
+          await deallocateAwsVM(vmNode.vmName, vmNode.region);
           vmNode.status = 'deallocated';
           await vmNode.save();
         }
@@ -445,7 +444,7 @@ async function processDeleteServer(job) {
 // --- Idle VM Reaper ---
 
 async function processIdleReaper() {
-  if (!isAzureConfigured) return;
+  if (!isAwsConfigured) return;
 
   console.log('[Reaper] Running idle VM check...');
   const staleThreshold = new Date(Date.now() - 40_000); // 40s = 4 missed heartbeats (10s interval)
@@ -477,7 +476,7 @@ async function processIdleReaper() {
   for (const vm of idleVMs) {
     try {
       console.log(`[Reaper] VM ${vm.vmName} has 0 active servers. Deallocating...`);
-      await deallocateAzureVM(vm.vmName);
+      await deallocateAwsVM(vm.vmName, vm.region);
       vm.status = 'deallocated';
       vm.activeServersCount = 0;
       await vm.save();

@@ -146,7 +146,7 @@ export function AppProvider({ children }) {
   }, [servers])
 
   // --- Actions ---
-  const deployServer = async (name, version, azureLocation) => {
+  const deployServer = async (name, version, awsLocation) => {
     try {
       const res = await fetch(`${API_BASE}/servers/deploy`, {
         method: 'POST',
@@ -155,7 +155,7 @@ export function AppProvider({ children }) {
           name: name || 'New SMP Server', 
           versionType: 'Paper', 
           versionNumber: version || '1.21.11',
-          azureLocation: azureLocation || 'eastus'
+          awsLocation: awsLocation || 'ap-south-1'
         })
       });
       const data = await res.json();

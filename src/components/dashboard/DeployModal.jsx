@@ -6,7 +6,7 @@ import './DeployModal.css';
 export default function DeployModal({ onClose }) {
   const { deployServer, getAuthHeaders, API_BASE } = useApp();
   const [name, setName] = useState('');
-  const [azureLocation, setAzureLocation] = useState('');
+  const [awsLocation, setAwsLocation] = useState('');
   const [version, setVersion] = useState('1.21.11');
   const [isDeploying, setIsDeploying] = useState(false);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
@@ -16,16 +16,16 @@ export default function DeployModal({ onClose }) {
   useEffect(() => {
     const fetchRegions = async () => {
       try {
-        const res = await fetch(`${API_BASE}/system/azure-regions`, {
+        const res = await fetch(`${API_BASE}/system/aws-regions`, {
           headers: getAuthHeaders()
         })
         const data = await res.json()
         if (data.regions && data.regions.length > 0) {
           setRegions(data.regions.map(r => ({ ...r, group: r.group || 'Available' })))
-          setAzureLocation(data.regions[0].value)
+          setAwsLocation(data.regions[0].value)
         }
       } catch (err) {
-        console.error('Failed to fetch Azure regions:', err)
+        console.error('Failed to fetch AWS regions:', err)
       } finally {
         setRegionsLoading(false)
       }
@@ -39,7 +39,7 @@ export default function DeployModal({ onClose }) {
     { id: '1.16.5', title: 'Paper 1.16.5', desc: 'Legacy Classic • For Custom Plugins', recommended: false, badge: 'Legacy' }
   ];
 
-  const selectedRegion = regions.find(r => r.value === azureLocation);
+  const selectedRegion = regions.find(r => r.value === awsLocation);
 
   const regionGroups = ['Americas', 'Europe', 'Asia Pacific', 'Middle East & Africa', 'Available']
     .map(group => ({ group, items: regions.filter(r => r.group === group) }))
@@ -48,7 +48,7 @@ export default function DeployModal({ onClose }) {
   const handleDeploy = async () => {
     setIsDeploying(true);
     try {
-      await deployServer(name || 'CraftHost SMP Server', version, azureLocation);
+      await deployServer(name || 'CraftHost SMP Server', version, awsLocation);
     } catch (e) {
       console.error(e);
     } finally {
@@ -65,7 +65,7 @@ export default function DeployModal({ onClose }) {
         <div className="modal-header">
           <div className="modal-icon-wrapper"><Globe2 size={24} /></div>
           <h2 className="text-gradient">Deploy Global Server</h2>
-          <p>Choose any Azure region worldwide. Your VM will be provisioned exactly where you select.</p>
+          <p>Choose any AWS region worldwide. Your VM will be provisioned exactly where you select.</p>
         </div>
 
         <div className="modal-body select-screen-body">
@@ -101,7 +101,7 @@ export default function DeployModal({ onClose }) {
           </div>
 
           <div className="form-group select-screen-group">
-            <label className="section-label">2. Select Azure Region</label>
+            <label className="section-label">2. Select AWS Region</label>
             
             <div className="location-dropdown">
               <button 
@@ -126,9 +126,9 @@ export default function DeployModal({ onClose }) {
                       {group.items.map(r => (
                         <div
                           key={r.value}
-                          className={`location-option ${azureLocation === r.value ? 'active' : ''}`}
+                          className={`location-option ${awsLocation === r.value ? 'active' : ''}`}
                           onClick={() => {
-                            setAzureLocation(r.value);
+                            setAwsLocation(r.value);
                             setShowLocationDropdown(false);
                           }}
                         >
@@ -137,7 +137,7 @@ export default function DeployModal({ onClose }) {
                             <span className="location-name">{r.label}</span>
                             <span className="location-city">{r.city}</span>
                           </div>
-                          {azureLocation === r.value && <div className="location-check">✓</div>}
+                          {awsLocation === r.value && <div className="location-check">✓</div>}
                         </div>
                       ))}
                     </div>
@@ -151,7 +151,7 @@ export default function DeployModal({ onClose }) {
         <div className="modal-footer select-screen-footer">
           <div className="node-specs">
             <Cpu size={16} className="cpu-icon" /> 
-            <span>Azure Standard_B2s (2 vCPU, 4GB RAM) • Ubuntu 22.04 • Auto-provisioned</span>
+            <span>AWS t3.small (2 vCPU, 2GB RAM) • Ubuntu 22.04 • Auto-provisioned</span>
           </div>
           <button 
             className="btn btn-primary deploy-btn" 
