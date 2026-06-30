@@ -204,8 +204,8 @@ async function ensureAwsVM(vmName, awsLocation) {
       const authCmd = new AuthorizeSecurityGroupIngressCommand({
         GroupId: sgId,
         IpPermissions: [
-          { IpProtocol: 'tcp', FromPort: 22, ToPort: 22, IpRanges: [{ CidrIp: CONTROL_PLANE_IP ? \`\${CONTROL_PLANE_IP}/32\` : '0.0.0.0/0' }] },
-          { IpProtocol: 'tcp', FromPort: 4000, ToPort: 4000, IpRanges: [{ CidrIp: CONTROL_PLANE_IP ? \`\${CONTROL_PLANE_IP}/32\` : '0.0.0.0/0' }] },
+          { IpProtocol: 'tcp', FromPort: 22, ToPort: 22, IpRanges: [{ CidrIp: CONTROL_PLANE_IP ? `${CONTROL_PLANE_IP}/32` : '0.0.0.0/0' }] },
+          { IpProtocol: 'tcp', FromPort: 4000, ToPort: 4000, IpRanges: [{ CidrIp: CONTROL_PLANE_IP ? `${CONTROL_PLANE_IP}/32` : '0.0.0.0/0' }] },
           { IpProtocol: 'tcp', FromPort: 25565, ToPort: 25575, IpRanges: [{ CidrIp: '0.0.0.0/0' }] }
         ]
       });
