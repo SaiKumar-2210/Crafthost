@@ -103,18 +103,17 @@ jobs:
           fi
           if [ ! -d "/opt/crafthost-control" ]; then
             sudo git clone https://github.com/${{ github.repository }}.git /opt/crafthost-control
-            cd /opt/crafthost-control
-            sudo npm install
-            cd backend && sudo npm install && cd ..
           else
             cd /opt/crafthost-control
             sudo git fetch --all
             sudo git reset --hard origin/main
           fi
           cd /opt/crafthost-control
+          sudo npm install
+          cd backend && sudo npm install && cd ..
           sudo npm run build
           sudo npm install -g pm2
-          pm2 start ./backend/scheduler.js --name crafthost-scheduler --max-memory-restart 256M || true
-          pm2 start ./backend/control.js --name crafthost-api --max-memory-restart 512M || true
-          pm2 restart all
-          pm2 save --force
+          npx pm2 start ./backend/scheduler.js --name crafthost-scheduler --max-memory-restart 256M || true
+          npx pm2 start ./backend/control.js --name crafthost-api --max-memory-restart 512M || true
+          npx pm2 restart all
+          npx pm2 save --force
