@@ -93,7 +93,7 @@ jobs:
               curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
               sudo apt-get install -y nodejs
             elif command -v yum &> /dev/null; then
-              sudo yum install -y nodejs
+              sudo yum install -y nodejs20 || sudo yum install -y nodejs
             fi
           fi
           if [ ! -d "/opt/crafthost-control" ]; then
