@@ -89,8 +89,12 @@ jobs:
             sudo apt-get update && sudo apt-get install -y git || sudo yum install -y git
           fi
           if ! command -v npm &> /dev/null; then
-            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-            sudo apt-get install -y nodejs || sudo yum install -y nodejs
+            if command -v apt-get &> /dev/null; then
+              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+              sudo apt-get install -y nodejs
+            elif command -v yum &> /dev/null; then
+              sudo yum install -y nodejs
+            fi
           fi
           if [ ! -d "/opt/crafthost-control" ]; then
             sudo git clone https://github.com/${{ github.repository }}.git /opt/crafthost-control
