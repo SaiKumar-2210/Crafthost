@@ -38,12 +38,20 @@ const CONTROL_PLANE_IP = process.env.CONTROL_PLANE_IP || null;
 
 const ALLOWED_REGIONS = [
   'ap-south-1',
+  'ap-south-2',
   'ap-northeast-2',
+  'us-east-1',
+  'eu-west-2',
+  'ap-southeast-2',
 ];
 
 const SAFE_REGION_METADATA = [
   { value: 'ap-south-1', label: 'Asia Pacific (Mumbai)', city: 'Mumbai', country: '🇮🇳', group: 'Asia Pacific' },
+  { value: 'ap-south-2', label: 'Asia Pacific (Hyderabad)', city: 'Hyderabad', country: '🇮🇳', group: 'Asia Pacific' },
   { value: 'ap-northeast-2', label: 'Asia Pacific (Seoul)', city: 'Seoul', country: '🇰🇷', group: 'Asia Pacific' },
+  { value: 'us-east-1', label: 'US East (N. Virginia)', city: 'N. Virginia', country: '🇺🇸', group: 'North America' },
+  { value: 'eu-west-2', label: 'Europe (London)', city: 'London', country: '🇬🇧', group: 'Europe' },
+  { value: 'ap-southeast-2', label: 'Asia Pacific (Sydney)', city: 'Sydney', country: '🇦🇺', group: 'Asia Pacific' },
 ];
 
 const getAwsClient = (region = defaultRegion) => {

@@ -14,10 +14,14 @@ const {
   getAwsVMPublicIP,
 } = require('../aws-provisioner');
 
-// The 2 static VMs we want
+// The static VMs we want — one per region
 const STATIC_VMS = [
   { vmName: 'crafthost-node-india', region: 'ap-south-1', vmIndex: 1 },
+  { vmName: 'crafthost-node-hyderabad', region: 'ap-south-2', vmIndex: 1 },
   { vmName: 'crafthost-node-korea', region: 'ap-northeast-2', vmIndex: 1 },
+  { vmName: 'crafthost-node-us', region: 'us-east-1', vmIndex: 1 },
+  { vmName: 'crafthost-node-uk', region: 'eu-west-2', vmIndex: 1 },
+  { vmName: 'crafthost-node-australia', region: 'ap-southeast-2', vmIndex: 1 },
 ];
 
 async function main() {
