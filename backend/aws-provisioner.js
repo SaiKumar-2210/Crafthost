@@ -234,7 +234,7 @@ async function ensureAwsVM(vmName, awsLocation) {
   const latestAmi = imagesRes.Images.sort((a, b) => new Date(b.CreationDate) - new Date(a.CreationDate))[0].ImageId;
 
   const userData = Buffer.from(generateCloudInitScript(awsLocation, vmName)).toString('base64');
-  const vmSize = process.env.AWS_VM_SIZE || 't3.medium';
+  const vmSize = process.env.AWS_VM_SIZE || 't3.small';
   console.log(`[AWS Provisioner] Creating VM ${vmName} (${vmSize})...`);
 
   const runCmd = new RunInstancesCommand({
