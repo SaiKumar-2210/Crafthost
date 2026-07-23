@@ -190,3 +190,14 @@
 /* visual refresh */
 .dashboard-welcome{display:flex;align-items:end;justify-content:space-between;margin-bottom:2rem}.dashboard-title{margin:0;font-size:clamp(1.7rem,3vw,2.5rem);letter-spacing:-.065em}.dashboard-subtitle{margin:.35rem 0 0;color:var(--text-secondary);font-size:.86rem}.dashboard-grid{display:grid;gap:1.2rem}.full-width{width:100%}.servers-section{min-width:0}.section-header-compact{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}.section-title-sm{margin:0;font-size:1.05rem;letter-spacing:-.03em}.servers-list{display:grid;gap:12px}@media(max-width:600px){.dashboard-welcome{display:block}}
 
+
+/* layout corrections */
+.stats-grid{grid-template-columns:minmax(220px,320px);margin-bottom:2.4rem}
+.servers-list{grid-template-columns:1fr;min-width:0}
+.server-card{min-width:0;overflow:hidden}
+.server-card-header,.server-info,.server-info>div{min-width:0}
+.server-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:230px}
+.server-card-actions{min-width:0}
+@media(max-width:1050px){.server-card-actions{grid-column:1/-1;grid-row:auto;justify-content:flex-end}}
+@media(max-width:650px){.stats-grid{grid-template-columns:1fr}.server-name{max-width:180px}}
+

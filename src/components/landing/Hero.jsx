@@ -73,7 +73,7 @@ export default function Hero() {
           </div>
           <div className="hero-stat-divider" />
           <div className="hero-stat">
-            <span className="hero-stat-value">2</span>
+            <span className="hero-stat-value">5</span>
             <span className="hero-stat-label">Global Locations</span>
           </div>
           <div className="hero-stat-divider" />
@@ -91,7 +91,7 @@ export default function Hero() {
               <span className="dot dot-yellow" />
               <span className="dot dot-green" />
             </div>
-            <span className="terminal-title">crafthost — server console</span>
+            <span className="terminal-title">crafthost - server console</span>
           </div>
           <div className="terminal-body">
             <div className="terminal-line">
@@ -99,16 +99,16 @@ export default function Hero() {
               <span className="terminal-cmd">crafthost deploy --version 1.21.4 --type paper</span>
             </div>
             <div className="terminal-line terminal-output">
-              <span className="terminal-success">✓</span> Provisioning server in us-east-1...
+              <span className="terminal-success">OK</span> Provisioning server in us-east-1...
             </div>
             <div className="terminal-line terminal-output">
-              <span className="terminal-success">✓</span> Installing Paper 1.21.4 (build #445)...
+              <span className="terminal-success">OK</span> Installing Paper 1.21.4 (build #445)...
             </div>
             <div className="terminal-line terminal-output">
-              <span className="terminal-success">✓</span> Configuring DDoS protection...
+              <span className="terminal-success">OK</span> Configuring DDoS protection...
             </div>
             <div className="terminal-line terminal-output">
-              <span className="terminal-success">✓</span> Server deployed! Connect: <span className="terminal-highlight">play.crafthost.gg:25565</span>
+              <span className="terminal-success">OK</span> Server deployed! Connect: <span className="terminal-highlight">play.crafthost.gg:25565</span>
             </div>
             <div className="terminal-line">
               <span className="terminal-prompt">$</span>

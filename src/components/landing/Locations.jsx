@@ -2,8 +2,11 @@ import { MapPin, Globe } from 'lucide-react'
 import './Locations.css'
 
 const locations = [
-  { name: 'Mumbai', region: 'India', x: '66%', y: '48%', ping: '18ms' },
-  { name: 'Seoul', region: 'Korea', x: '80%', y: '35%', ping: '12ms' },
+  { name: 'US East', region: 'United States', x: '21%', y: '37%', ping: '92ms' },
+  { name: 'London', region: 'United Kingdom', x: '47%', y: '26%', ping: '108ms' },
+  { name: 'Mumbai', region: 'India', x: '67%', y: '47%', ping: '18ms' },
+  { name: 'Seoul', region: 'Korea', x: '79%', y: '34%', ping: '12ms' },
+  { name: 'Sydney', region: 'Australia', x: '84%', y: '71%', ping: '142ms' },
 ]
 
 export default function Locations() {
@@ -20,43 +23,36 @@ export default function Locations() {
             <span className="text-gradient"> Everywhere</span>
           </h2>
           <p className="section-subtitle">
-            Currently available in India and Korea for the best regional performance and lowest possible ping.
+            Deploy close to your players with nodes in the US, UK, India, Korea, and Australia.
           </p>
         </div>
 
-        {/* Map container */}
         <div className="locations-map-wrap">
           <div className="locations-map">
-            {/* World map outline (simplified SVG) */}
-            <svg className="world-svg" viewBox="0 0 1000 500" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Simplified continent outlines */}
-              {/* North America */}
-              <path d="M120 80 L200 70 L260 90 L280 120 L260 150 L280 180 L270 220 L240 250 L200 260 L180 220 L140 200 L100 160 L90 120 Z"
-                stroke="hsla(215,20%,30%,0.3)" strokeWidth="1" fill="hsla(215,20%,20%,0.1)" />
-              {/* South America */}
-              <path d="M240 280 L280 270 L310 300 L320 350 L300 400 L270 380 L250 340 L230 310 Z"
-                stroke="hsla(215,20%,30%,0.3)" strokeWidth="1" fill="hsla(215,20%,20%,0.1)" />
-              {/* Europe */}
-              <path d="M440 80 L500 70 L540 90 L560 110 L540 140 L500 150 L470 140 L450 110 Z"
-                stroke="hsla(215,20%,30%,0.3)" strokeWidth="1" fill="hsla(215,20%,20%,0.1)" />
-              {/* Africa */}
-              <path d="M440 180 L500 170 L540 200 L560 260 L540 340 L500 370 L460 340 L440 280 L430 230 Z"
-                stroke="hsla(215,20%,30%,0.3)" strokeWidth="1" fill="hsla(215,20%,20%,0.1)" />
-              {/* Asia */}
-              <path d="M560 60 L700 50 L800 70 L850 110 L830 160 L780 190 L720 200 L660 180 L600 160 L570 120 Z"
-                stroke="hsla(215,20%,30%,0.3)" strokeWidth="1" fill="hsla(215,20%,20%,0.1)" />
-              {/* Australia */}
-              <path d="M780 320 L860 310 L890 340 L880 380 L840 390 L800 370 L780 340 Z"
-                stroke="hsla(215,20%,30%,0.3)" strokeWidth="1" fill="hsla(215,20%,20%,0.1)" />
+            <svg className="world-svg" viewBox="0 0 1000 500" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="CraftHost global server locations">
+              <g className="map-land" fill="url(#landFill)" stroke="rgba(183,243,107,.16)" strokeWidth="1.2">
+                <path d="M91 116l33-35 57-10 39 18 32 40-21 34 17 39-9 42-34 35-39 10-17-38-35-18-42-40-12-42 22-27z" />
+                <path d="M241 285l31-13 25 27 7 43-17 50-25 39-25-14-22-40-25-48 8-29z" />
+                <path d="M402 106l28-18 32 8 28 27-18 29-32 9-37-17-14-30z" />
+                <path d="M408 196l58-10 38 25 19 54-17 72-35 40-45-32-22-58-9-57z" />
+                <path d="M521 96l68-13 67 7 49 24 44 43-17 45-34 12-45 30-54-12-50-33-24-48z" />
+                <path d="M747 303l55-9 28 27-9 38-40 13-35-18-18-34z" />
+                <path d="M636 215l12-8 11 6-7 14-14 2zM672 218l15-5 12 8-7 12-16-2zM698 233l11-3 8 11-11 8z" />
+              </g>
+              <defs>
+                <linearGradient id="landFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stopColor="#1a2b2b" />
+                  <stop offset="1" stopColor="#111c24" />
+                </linearGradient>
+              </defs>
             </svg>
 
-            {/* Location pins */}
-            {locations.map((loc, i) => (
+            {locations.map((loc) => (
               <div
-                key={i}
+                key={loc.name}
                 className="location-pin"
                 style={{ left: loc.x, top: loc.y }}
-                title={`${loc.name} — ${loc.ping}`}
+                title={loc.name + ' — ' + loc.ping}
               >
                 <div className="pin-pulse" />
                 <div className="pin-dot" />
@@ -73,10 +69,9 @@ export default function Locations() {
           </div>
         </div>
 
-        {/* Location cards */}
         <div className="locations-list stagger-children">
-          {locations.map((loc, i) => (
-            <div className="location-chip" key={i}>
+          {locations.map((loc) => (
+            <div className="location-chip" key={loc.name}>
               <MapPin size={12} />
               <span>{loc.name}</span>
               <span className="location-chip-ping">{loc.ping}</span>
