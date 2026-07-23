@@ -95,3 +95,7 @@
     font-size: var(--text-base);
   }
 }
+
+/* visual refresh */
+.cta-section{padding:2rem 0 7rem}.cta-card{position:relative;overflow:hidden;padding:5rem 2rem;border:1px solid var(--border-accent);border-radius:var(--radius-xl);background:radial-gradient(circle at 50% 0,rgba(183,243,107,.16),transparent 45%),#111921;text-align:center}.cta-content{position:relative;z-index:1}.cta-icon-wrap{width:54px;height:54px;display:grid;place-items:center;margin:0 auto 1.1rem;border-radius:16px;background:var(--accent-primary);color:#0b130d;box-shadow:0 0 38px var(--accent-primary-glow)}.cta-title{margin:0 auto .8rem;font-size:clamp(2rem,4vw,3.3rem);letter-spacing:-.065em}.cta-subtitle{max-width:580px;margin:0 auto;color:var(--text-secondary)}.cta-actions{margin-top:1.6rem}.cta-bg-glow{position:absolute;width:20rem;height:20rem;border-radius:50%;filter:blur(60px);background:var(--accent-primary);opacity:.08}.cta-glow-1{left:-10rem;top:-10rem}.cta-glow-2{right:-10rem;bottom:-12rem}
+

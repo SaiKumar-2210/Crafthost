@@ -187,3 +187,21 @@
   background: hsla(0, 72%, 51%, 0.2);
   border-color: hsla(0, 72%, 51%, 0.4);
 }
+
+.player-list-offline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+}
+
+.player-list-offline h3 {
+  color: var(--text-tertiary);
+  font-weight: 500;
+  font-size: var(--text-base);
+}
+
+/* visual refresh */
+.players-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}.players-title{margin:0;font-size:1rem}.players-search{max-width:240px}.players-table-container{border:1px solid var(--border-primary);border-radius:var(--radius-lg);background:var(--bg-card);overflow:auto}.players-table{width:100%;border-collapse:collapse}.players-table th,.players-table td{padding:.85rem 1rem;text-align:left;border-bottom:1px solid var(--border-subtle);font-size:.75rem}.players-table th{color:var(--text-tertiary);font-size:.63rem;text-transform:uppercase}.players-table td{color:var(--text-secondary)}@media(max-width:600px){.players-header{display:grid;gap:.8rem}.players-search{max-width:none}}
+
