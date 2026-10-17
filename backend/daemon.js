@@ -94,7 +94,7 @@ async function ensureServerJar(versionType, versionNumber) {
   }
   const jarName = `${versionType}-${versionNumber}.jar`;
   const jarPath = path.join(VERSIONS_DIR, jarName);
-  
+
   if (fs.existsSync(jarPath)) {
     const stats = fs.statSync(jarPath);
     if (stats.size > 1000000) return jarPath; // Ensure it's not a corrupt 0-byte file
@@ -103,7 +103,22 @@ async function ensureServerJar(versionType, versionNumber) {
   if (activeDownload) return activeDownload;
 
   console.log(`[Daemon] Downloading ${jarName}...`);
-  const downloadUrl = 'https://api.papermc.io/v2/projects/paper/versions/1.21.11/builds/69/downloads/paper-1.21.11-69.jar';
+  
+  // PaperMC API v2 has been sunset. Use Mojang's official vanilla server jar.
+  let downloadUrl;
+  try {
+    const manifestRes = await fetch('https://launchermeta.mojang.com/mc/game/version_manifest.json');
+    const manifest = await manifestRes.json();
+    const versionInfo = manifest.versions.find(v => v.id === versionNumber);
+    if (!versionInfo) throw new Error(`Version ${versionNumber} not found in Mojang manifest`);
+    const detailsRes = await fetch(versionInfo.url);
+    const details = await detailsRes.json();
+    downloadUrl = details.downloads.server.url;
+    console.log(`[Daemon] Using Mojang vanilla server jar for ${versionNumber}`);
+  } catch (err) {
+    console.error('[Daemon] Failed to fetch Mojang download URL:', err.message);
+    throw new Error('Failed to determine Minecraft download URL');
+  }
   
   activeDownload = new Promise((resolve, reject) => {
     const fileStream = fs.createWriteStream(jarPath);

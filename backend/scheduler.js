@@ -362,7 +362,7 @@ async function processStopServer(job) {
   }
 
   // Auto-deallocate check after grace period
-  if (isAwsConfigured) {
+  if (isAwsConfigured && !vmNode.persistent) {
     await new Promise(r => setTimeout(r, 10000));
     try {
       const statusRes = await daemonRequest(vmNode.ip, 'GET', '/api/daemon/status');
@@ -423,7 +423,7 @@ async function processDeleteServer(job) {
     await vmNode.save();
 
     // Auto-deallocate if VM is now empty
-    if (vmNode.activeServersCount === 0 && isAwsConfigured && vmNode.status === 'running') {
+    if (vmNode.activeServersCount === 0 && isAwsConfigured && vmNode.status === 'running' && !vmNode.persistent) {
       try {
         const statusRes = await daemonRequest(vmNode.ip, 'GET', '/api/daemon/status');
         const statusData = await statusRes.json();
@@ -465,9 +465,11 @@ async function processIdleReaper() {
   }
 
   // Deallocate healthy, idle VMs (running with 0 active processes)
+  // Skip persistent/static VMs — these are user-managed nodes that should stay on.
   const idleVMs = await VMNode.find({
     status: 'running',
     runningServerIds: { $size: 0 },
+    persistent: { $ne: true },
     $or: [
       { lastHeartbeat: { $gte: staleThreshold } }, // Sent a heartbeat recently. Safe to kill.
       { lastHeartbeat: null, updatedAt: { $lt: recentBootThreshold } }, // Hung boot: never sent a heartbeat, but been 2+ mins.

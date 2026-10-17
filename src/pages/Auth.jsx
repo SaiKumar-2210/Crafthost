@@ -55,7 +55,7 @@ export default function Auth({ type = 'login' }) {
   return (
     <div className="auth-page">
       <Link to="/" className="auth-back-logo">
-        <img src={logoImg} alt="CraftHost Logo" style={{ height: '42px', marginRight: '8px', borderRadius: '4px' }} />
+        <img src={logoImg} alt="CraftHost Logo" className="logo-img logo-img-lg" />
         <span className="logo-text">CraftHost</span>
       </Link>
       
@@ -83,7 +83,7 @@ export default function Auth({ type = 'login' }) {
           <span>or log in with email</span>
         </div>
 
-        {error && <div className="auth-error" style={{ color: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '10px', borderRadius: '4px', marginBottom: '15px', textAlign: 'center', fontSize: '0.9rem' }}>{error}</div>}
+        {error && <div className="auth-error" role="alert">{error}</div>}
 
         <form className="auth-form" onSubmit={handleSubmit}>
           {!isLogin && (

@@ -46,6 +46,7 @@ jobs:
         # For actual production, set these in GitHub Repository Secrets!
         MONGODB_URI: ${{ secrets.MONGODB_URI }}
         JWT_SECRET: ${{ secrets.JWT_SECRET  }}
+        DAEMON_SECRET: ${{ secrets.DAEMON_SECRET }}
         NODE_ENV: test
 
   frontend-build:
@@ -74,7 +75,8 @@ jobs:
     name: Deploy to AWS VM
     runs-on: ubuntu-latest
     needs: [backend-tests, frontend-build]
-    if: github.ref == 'refs/heads/main'
+    # Re-enable only after configuring a reachable VM and setting this repository variable.
+    if: github.ref == 'refs/heads/main' && vars.ENABLE_SSH_DEPLOY == 'true'
     
     steps:
     - name: Execute deployment commands via SSH

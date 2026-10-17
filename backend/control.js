@@ -360,7 +360,7 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
     }
 
     // Auto-deallocation check for stop action
-    if (action === 'stop' && vmNode && isAwsConfigured) {
+    if (action === 'stop' && vmNode && isAwsConfigured && !vmNode.persistent) {
       setTimeout(async () => {
         try {
           const statusRes = await fetch(`${nodeUrl}/api/daemon/status`, {

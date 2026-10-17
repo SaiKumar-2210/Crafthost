@@ -1,0 +1,1012 @@
+[1m[90m[TAILING] Tailing last 200 lines for [all] processes (change the value with --lines option)[39m[22m
+[90m/home/SAYMYNAME/.pm2/pm2.log last 200 lines:[39m
+[34mPM2        | [39m2026-06-05T08:59:06: PM2 log: pid=238930 msg=failed to kill - retrying in 100ms
+[34mPM2        | [39m2026-06-05T08:59:06: PM2 log: pid=238930 msg=failed to kill - retrying in 100ms
+[34mPM2        | [39m2026-06-05T08:59:06: PM2 log: pid=238930 msg=failed to kill - retrying in 100ms
+[34mPM2        | [39m2026-06-05T08:59:06: PM2 log: pid=238930 msg=failed to kill - retrying in 100ms
+[34mPM2        | [39m2026-06-05T08:59:06: PM2 log: pid=238930 msg=failed to kill - retrying in 100ms
+[34mPM2        | [39m2026-06-05T08:59:06: PM2 log: pid=238930 msg=failed to kill - retrying in 100ms
+[34mPM2        | [39m2026-06-05T08:59:06: PM2 log: pid=238930 msg=failed to kill - retrying in 100ms
+[34mPM2        | [39m2026-06-05T08:59:06: PM2 log: pid=238930 msg=failed to kill - retrying in 100ms
+[34mPM2        | [39m2026-06-05T08:59:06: PM2 log: pid=238930 msg=failed to kill - retrying in 100ms
+[34mPM2        | [39m2026-06-05T08:59:07: PM2 log: pid=238930 msg=failed to kill - retrying in 100ms
+[34mPM2        | [39m2026-06-05T08:59:07: PM2 log: pid=238930 msg=failed to kill - retrying in 100ms
+[34mPM2        | [39m2026-06-05T08:59:07: PM2 log: pid=238930 msg=failed to kill - retrying in 100ms
+[34mPM2        | [39m2026-06-05T08:59:07: PM2 log: pid=238930 msg=failed to kill - retrying in 100ms
+[34mPM2        | [39m2026-06-05T08:59:07: PM2 log: pid=238930 msg=failed to kill - retrying in 100ms
+[34mPM2        | [39m2026-06-05T08:59:07: PM2 log: pid=238930 msg=failed to kill - retrying in 100ms
+[34mPM2        | [39m2026-06-05T08:59:07: PM2 log: Process with pid 238930 still alive after 1600ms, sending SIGKILL to 1 remaining pids...
+[34mPM2        | [39m2026-06-05T08:59:07: PM2 log: App [crafthost-scheduler:1] exited with code [0] via signal [SIGKILL]
+[34mPM2        | [39m2026-06-05T08:59:07: PM2 log: pid=238930 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T08:59:07: PM2 log: App [crafthost-scheduler:1] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T08:59:07: PM2 log: App [crafthost-scheduler:1] online
+[34mPM2        | [39m2026-06-05T10:23:40: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-05T10:23:40: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T10:23:40: PM2 log: pid=238966 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T10:23:40: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T10:23:40: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-05T10:23:40: PM2 log: Stopping app:crafthost-scheduler id:1
+[34mPM2        | [39m2026-06-05T10:23:40: PM2 log: App [crafthost-scheduler:1] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T10:23:40: PM2 log: pid=238979 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T10:23:40: PM2 log: App [crafthost-scheduler:1] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T10:23:40: PM2 log: App [crafthost-scheduler:1] online
+[34mPM2        | [39m2026-06-05T13:11:25: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-05T13:11:25: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T13:11:25: PM2 log: pid=240030 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T13:11:25: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T13:11:25: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-05T13:11:25: PM2 log: Stopping app:crafthost-scheduler id:1
+[34mPM2        | [39m2026-06-05T13:11:25: PM2 log: App [crafthost-scheduler:1] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T13:11:25: PM2 log: pid=240043 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T13:11:25: PM2 log: App [crafthost-scheduler:1] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T13:11:25: PM2 log: App [crafthost-scheduler:1] online
+[34mPM2        | [39m2026-06-05T13:33:47: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-05T13:33:47: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T13:33:47: PM2 log: pid=243644 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T13:33:47: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T13:33:47: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-05T13:33:47: PM2 log: Stopping app:crafthost-scheduler id:1
+[34mPM2        | [39m2026-06-05T13:33:47: PM2 log: App [crafthost-scheduler:1] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T13:33:47: PM2 log: pid=243657 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T13:33:47: PM2 log: App [crafthost-scheduler:1] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T13:33:47: PM2 log: App [crafthost-scheduler:1] online
+[34mPM2        | [39m2026-06-05T13:38:24: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-05T13:38:24: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T13:38:24: PM2 log: pid=243850 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T13:38:24: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T13:38:24: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-05T13:38:24: PM2 log: Stopping app:crafthost-scheduler id:1
+[34mPM2        | [39m2026-06-05T13:38:24: PM2 log: App [crafthost-scheduler:1] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T13:38:24: PM2 log: pid=243863 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T13:38:24: PM2 log: App [crafthost-scheduler:1] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T13:38:24: PM2 log: App [crafthost-scheduler:1] online
+[34mPM2        | [39m2026-06-05T13:56:09: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-05T13:56:09: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T13:56:09: PM2 log: pid=243952 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T13:56:09: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T13:56:09: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-05T13:56:09: PM2 log: Stopping app:crafthost-scheduler id:1
+[34mPM2        | [39m2026-06-05T13:56:09: PM2 log: App [crafthost-scheduler:1] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T13:56:09: PM2 log: pid=243965 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T13:56:09: PM2 log: App [crafthost-scheduler:1] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T13:56:09: PM2 log: App [crafthost-scheduler:1] online
+[34mPM2        | [39m2026-06-05T13:57:12: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-05T13:57:12: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T13:57:12: PM2 log: pid=244153 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T13:57:12: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T13:57:12: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-05T13:57:12: PM2 log: Stopping app:crafthost-scheduler id:1
+[34mPM2        | [39m2026-06-05T13:57:12: PM2 log: App [crafthost-scheduler:1] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T13:57:12: PM2 log: pid=244166 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T13:57:12: PM2 log: App [crafthost-scheduler:1] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T13:57:12: PM2 log: App [crafthost-scheduler:1] online
+[34mPM2        | [39m2026-06-05T14:00:21: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-05T14:00:21: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T14:00:21: PM2 log: pid=244190 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T14:00:21: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T14:00:21: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-05T14:00:21: PM2 log: Stopping app:crafthost-scheduler id:1
+[34mPM2        | [39m2026-06-05T14:00:21: PM2 log: App [crafthost-scheduler:1] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T14:00:21: PM2 log: pid=244203 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T14:00:21: PM2 log: App [crafthost-scheduler:1] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T14:00:21: PM2 log: App [crafthost-scheduler:1] online
+[34mPM2        | [39m2026-06-05T14:06:56: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-05T14:06:56: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T14:06:56: PM2 log: pid=244290 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T14:06:56: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T14:06:56: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-05T14:06:56: PM2 log: Stopping app:crafthost-scheduler id:1
+[34mPM2        | [39m2026-06-05T14:06:56: PM2 log: App [crafthost-scheduler:1] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T14:06:56: PM2 log: pid=244303 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T14:06:56: PM2 log: App [crafthost-scheduler:1] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T14:06:56: PM2 log: App [crafthost-scheduler:1] online
+[34mPM2        | [39m2026-06-05T14:15:39: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-05T14:15:39: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T14:15:39: PM2 log: pid=244397 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T14:15:39: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T14:15:39: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-05T14:15:39: PM2 log: Stopping app:crafthost-scheduler id:1
+[34mPM2        | [39m2026-06-05T14:15:39: PM2 log: App [crafthost-scheduler:1] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T14:15:39: PM2 log: pid=244410 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T14:15:39: PM2 log: App [crafthost-scheduler:1] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T14:15:39: PM2 log: App [crafthost-scheduler:1] online
+[34mPM2        | [39m2026-06-05T14:16:16: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-05T14:16:16: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T14:16:16: PM2 log: pid=244503 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T14:16:16: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T14:16:16: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-05T14:16:16: PM2 log: Stopping app:crafthost-scheduler id:1
+[34mPM2        | [39m2026-06-05T14:16:16: PM2 log: App [crafthost-scheduler:1] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T14:16:16: PM2 log: pid=244516 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T14:16:16: PM2 log: App [crafthost-scheduler:1] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T14:16:16: PM2 log: App [crafthost-scheduler:1] online
+[34mPM2        | [39m2026-06-05T15:00:14: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-05T15:00:14: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T15:00:14: PM2 log: pid=244607 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T15:00:14: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T15:00:14: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-05T15:00:14: PM2 log: Stopping app:crafthost-scheduler id:1
+[34mPM2        | [39m2026-06-05T15:00:14: PM2 log: App [crafthost-scheduler:1] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T15:00:14: PM2 log: pid=244620 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T15:00:14: PM2 log: App [crafthost-scheduler:1] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T15:00:14: PM2 log: App [crafthost-scheduler:1] online
+[34mPM2        | [39m2026-06-05T16:21:59: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-05T16:21:59: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T16:21:59: PM2 log: pid=245468 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T16:21:59: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T16:21:59: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-05T16:21:59: PM2 log: Stopping app:crafthost-scheduler id:1
+[34mPM2        | [39m2026-06-05T16:21:59: PM2 log: App [crafthost-scheduler:1] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T16:21:59: PM2 log: pid=245481 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T16:21:59: PM2 log: App [crafthost-scheduler:1] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T16:21:59: PM2 log: App [crafthost-scheduler:1] online
+[34mPM2        | [39m2026-06-05T16:33:16: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-05T16:33:16: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T16:33:16: PM2 log: pid=246316 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T16:33:16: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T16:33:16: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-05T16:33:16: PM2 log: Stopping app:crafthost-scheduler id:1
+[34mPM2        | [39m2026-06-05T16:33:16: PM2 log: App [crafthost-scheduler:1] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T16:33:16: PM2 log: pid=246329 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T16:33:16: PM2 log: App [crafthost-scheduler:1] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T16:33:16: PM2 log: App [crafthost-scheduler:1] online
+[34mPM2        | [39m2026-06-05T17:01:29: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-05T17:01:29: PM2 log: Stopping app:crafthost-scheduler id:1
+[34mPM2        | [39m2026-06-05T17:01:29: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T17:01:29: PM2 log: App [crafthost-scheduler:1] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-05T17:01:29: PM2 log: pid=246489 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T17:01:29: PM2 log: pid=246502 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-05T17:02:06: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-05T17:02:06: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-06T05:29:13: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-06T05:29:13: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-06T05:29:13: PM2 log: pid=246806 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-06T05:29:13: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-06T05:29:13: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-06T05:41:44: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-06T05:41:44: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-06T05:41:44: PM2 log: pid=256895 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-06T05:41:44: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-06T05:41:44: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-06T06:18:22: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-06T06:18:22: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-06T06:18:22: PM2 log: pid=257153 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-06T06:18:22: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-06T06:18:22: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-06T06:37:14: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-06T06:37:14: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-06T06:37:14: PM2 log: pid=257639 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-06T06:37:14: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-06T06:37:14: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-06T09:01:41: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-06T09:01:41: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-06T09:01:41: PM2 log: pid=258127 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-06T09:01:41: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-06T09:01:41: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-06T09:06:47: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-06T09:06:47: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-06T09:06:47: PM2 log: pid=259983 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-06T09:06:47: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-06T09:06:47: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-06T09:08:45: PM2 log: App [crafthost-scheduler:1] starting in -fork mode-
+[34mPM2        | [39m2026-06-06T09:08:45: PM2 log: App [crafthost-scheduler:1] online
+[34mPM2        | [39m2026-06-06T09:08:45: PM2 log: Stopping app:crafthost-api id:0
+[34mPM2        | [39m2026-06-06T09:08:45: PM2 log: App [crafthost-api:0] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-06T09:08:45: PM2 log: pid=260375 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-06T09:08:45: PM2 log: App [crafthost-api:0] starting in -fork mode-
+[34mPM2        | [39m2026-06-06T09:08:45: PM2 log: App [crafthost-api:0] online
+[34mPM2        | [39m2026-06-06T09:08:45: PM2 log: Stopping app:crafthost-scheduler id:1
+[34mPM2        | [39m2026-06-06T09:08:45: PM2 log: App [crafthost-scheduler:1] exited with code [0] via signal [SIGINT]
+[34mPM2        | [39m2026-06-06T09:08:46: PM2 log: pid=260701 msg=process tree killed (1 pids)
+[34mPM2        | [39m2026-06-06T09:08:46: PM2 log: App [crafthost-scheduler:1] starting in -fork mode-
+[34mPM2        | [39m2026-06-06T09:08:46: PM2 log: App [crafthost-scheduler:1] online
+
+[90m/home/SAYMYNAME/.pm2/logs/crafthost-scheduler-out.log last 200 lines:[39m
+[32m1|crafthos | [39m[Scheduler] SIGINT received. Shutting down gracefully...
+[32m1|crafthos | [39m[Scheduler] Workers closed. Exiting.
+[32m1|crafthos | [39m✅ Successfully connected to MongoDB Atlas
+[32m1|crafthos | [39m⚡ CraftHost Scheduler Worker starting...
+[32m1|crafthos | [39m⚡ CraftHost Scheduler Worker started. Listening for jobs...
+[32m1|crafthos | [39m   Orchestration queue: crafthost-orchestration (concurrency: 3)
+[32m1|crafthos | [39m   Reaper queue: crafthost-reaper (every 5 minutes)
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m
+[32m1|crafthos | [39m[Scheduler] SIGINT received. Shutting down gracefully...
+[32m1|crafthos | [39m[Scheduler] Workers closed. Exiting.
+[32m1|crafthos | [39m✅ Successfully connected to MongoDB Atlas
+[32m1|crafthos | [39m⚡ CraftHost Scheduler Worker starting...
+[32m1|crafthos | [39m⚡ CraftHost Scheduler Worker started. Listening for jobs...
+[32m1|crafthos | [39m   Orchestration queue: crafthost-orchestration (concurrency: 3)
+[32m1|crafthos | [39m   Reaper queue: crafthost-reaper (every 5 minutes)
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m
+[32m1|crafthos | [39m[Scheduler] SIGINT received. Shutting down gracefully...
+[32m1|crafthos | [39m[Scheduler] Workers closed. Exiting.
+[32m1|crafthos | [39m✅ Successfully connected to MongoDB Atlas
+[32m1|crafthos | [39m⚡ CraftHost Scheduler Worker starting...
+[32m1|crafthos | [39m⚡ CraftHost Scheduler Worker started. Listening for jobs...
+[32m1|crafthos | [39m   Orchestration queue: crafthost-orchestration (concurrency: 3)
+[32m1|crafthos | [39m   Reaper queue: crafthost-reaper (every 5 minutes)
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m
+[32m1|crafthos | [39m[Scheduler] SIGINT received. Shutting down gracefully...
+[32m1|crafthos | [39m[Scheduler] Workers closed. Exiting.
+[32m1|crafthos | [39m✅ Successfully connected to MongoDB Atlas
+[32m1|crafthos | [39m⚡ CraftHost Scheduler Worker starting...
+[32m1|crafthos | [39m⚡ CraftHost Scheduler Worker started. Listening for jobs...
+[32m1|crafthos | [39m   Orchestration queue: crafthost-orchestration (concurrency: 3)
+[32m1|crafthos | [39m   Reaper queue: crafthost-reaper (every 5 minutes)
+[32m1|crafthos | [39m
+[32m1|crafthos | [39m[Scheduler] SIGINT received. Shutting down gracefully...
+[32m1|crafthos | [39m[Scheduler] Workers closed. Exiting.
+[32m1|crafthos | [39m✅ Successfully connected to MongoDB Atlas
+[32m1|crafthos | [39m⚡ CraftHost Scheduler Worker starting...
+[32m1|crafthos | [39m⚡ CraftHost Scheduler Worker started. Listening for jobs...
+[32m1|crafthos | [39m   Orchestration queue: crafthost-orchestration (concurrency: 3)
+[32m1|crafthos | [39m   Reaper queue: crafthost-reaper (every 5 minutes)
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m
+[32m1|crafthos | [39m[Scheduler] SIGINT received. Shutting down gracefully...
+[32m1|crafthos | [39m[Scheduler] Workers closed. Exiting.
+[32m1|crafthos | [39m✅ Successfully connected to MongoDB Atlas
+[32m1|crafthos | [39m⚡ CraftHost Scheduler Worker starting...
+[32m1|crafthos | [39m⚡ CraftHost Scheduler Worker started. Listening for jobs...
+[32m1|crafthos | [39m   Orchestration queue: crafthost-orchestration (concurrency: 3)
+[32m1|crafthos | [39m   Reaper queue: crafthost-reaper (every 5 minutes)
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Scheduler] Processing deploy-server job 9: "skbidys server" in centralindia
+[32m1|crafthos | [39m[Scheduler] Found deallocated VM to restart: crafthost-node-india
+[32m1|crafthos | [39m[Azure Orchestrator] Request to start VM: crafthost-node-india
+[32m1|crafthos | [39m[Azure Orchestrator] VM crafthost-node-india successfully started in Azure!
+[32m1|crafthos | [39m[Azure IP Resolver] Resolved IP for crafthost-node-india -> 20.207.197.215
+[32m1|crafthos | [39m[Scheduler] ✅ Deploy job 9 completed: srv-00009 on crafthost-node-india
+[32m1|crafthos | [39m[Scheduler] Job 9 (deploy-server) completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m
+[32m1|crafthos | [39m[Scheduler] SIGINT received. Shutting down gracefully...
+[32m1|crafthos | [39m[Scheduler] Workers closed. Exiting.
+[32m1|crafthos | [39m✅ Successfully connected to MongoDB Atlas
+[32m1|crafthos | [39m⚡ CraftHost Scheduler Worker starting...
+[32m1|crafthos | [39m⚡ CraftHost Scheduler Worker started. Listening for jobs...
+[32m1|crafthos | [39m   Orchestration queue: crafthost-orchestration (concurrency: 3)
+[32m1|crafthos | [39m   Reaper queue: crafthost-reaper (every 5 minutes)
+[32m1|crafthos | [39m[Scheduler] Processing deploy-server job 10: "dfasd" in centralindia
+[32m1|crafthos | [39m[Scheduler] Found deallocated VM to restart: crafthost-node-india
+[32m1|crafthos | [39m[Azure Orchestrator] Request to start VM: crafthost-node-india
+[32m1|crafthos | [39m[Azure Orchestrator] VM crafthost-node-india successfully started in Azure!
+[32m1|crafthos | [39m[Azure IP Resolver] Resolved IP for crafthost-node-india -> 20.207.197.215
+[32m1|crafthos | [39m[Scheduler] ✅ Deploy job 10 completed: srv-00010 on crafthost-node-india
+[32m1|crafthos | [39m[Scheduler] Job 10 (deploy-server) completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m
+[32m1|crafthos | [39m[Scheduler] SIGINT received. Shutting down gracefully...
+[32m1|crafthos | [39m[Scheduler] Workers closed. Exiting.
+[32m1|crafthos | [39m✅ Successfully connected to MongoDB Atlas
+[32m1|crafthos | [39m⚡ CraftHost Scheduler Worker starting...
+[32m1|crafthos | [39m⚡ CraftHost Scheduler Worker started. Listening for jobs...
+[32m1|crafthos | [39m   Orchestration queue: crafthost-orchestration (concurrency: 3)
+[32m1|crafthos | [39m   Reaper queue: crafthost-reaper (every 5 minutes)
+[32m1|crafthos | [39m[Scheduler] Processing deploy-server job 11: "nigga" in centralindia
+[32m1|crafthos | [39m[Scheduler] Found running VM with capacity: crafthost-node-india (2/5)
+[32m1|crafthos | [39m[Scheduler] ✅ Deploy job 11 completed: srv-00011 on crafthost-node-india
+[32m1|crafthos | [39m[Scheduler] Job 11 (deploy-server) completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Scheduler] Processing delete-server job for srv-00011
+[32m1|crafthos | [39m[Scheduler] ✅ Server srv-00011 deleted successfully.
+[32m1|crafthos | [39m[Scheduler] Job 12 (delete-server) completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m[Reaper] Running idle VM check...
+[32m1|crafthos | [39m[Reaper] All VMs healthy, no idle VMs found.
+[32m1|crafthos | [39m[Reaper] Idle check completed.
+[32m1|crafthos | [39m
+[32m1|crafthos | [39m[Scheduler] SIGINT received. Shutting down gracefully...
+[32m1|crafthos | [39m[Scheduler] Workers closed. Exiting.
+[32m1|crafthos | [39m✅ Successfully connected to MongoDB Atlas
+[32m1|crafthos | [39m⚡ CraftHost Scheduler Worker starting...
+
+[90m/home/SAYMYNAME/.pm2/logs/crafthost-api-out.log last 200 lines:[39m
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: 8PDxS-HgYmw4FNDOAAAD
+[32m0|crafthos | [39m[Socket.IO] No clients left for srv-00010. Disconnecting daemon relay.
+[32m0|crafthos | [39m[Socket.IO] Daemon disconnected for srv-00010: io client disconnect
+[32m0|crafthos | [39m[Socket.IO] Client connected: jGY-vjJgW6j-JGTgAAAF
+[32m0|crafthos | [39m[Socket.IO] Client jGY-vjJgW6j-JGTgAAAF joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Establishing relay to daemon at http://20.207.197.215:4000 for server srv-00010...
+[32m0|crafthos | [39m[Socket.IO] Connected to daemon at http://20.207.197.215:4000 for server srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client jGY-vjJgW6j-JGTgAAAF joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Reusing daemon connection for srv-00010 (refs: 2)
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: jGY-vjJgW6j-JGTgAAAF
+[32m0|crafthos | [39m[Socket.IO] No clients left for srv-00010. Disconnecting daemon relay.
+[32m0|crafthos | [39m[Socket.IO] Daemon disconnected for srv-00010: io client disconnect
+[32m0|crafthos | [39m[Socket.IO] Client connected: TsmNch65f3mVSfvpAAAH
+[32m0|crafthos | [39m[Socket.IO] Client TsmNch65f3mVSfvpAAAH joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Establishing relay to daemon at http://20.207.197.215:4000 for server srv-00010...
+[32m0|crafthos | [39m[Socket.IO] Connected to daemon at http://20.207.197.215:4000 for server srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client TsmNch65f3mVSfvpAAAH joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Reusing daemon connection for srv-00010 (refs: 2)
+[32m0|crafthos | [39m[Socket.IO] Daemon disconnected for srv-00010: io client disconnect
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: TsmNch65f3mVSfvpAAAH
+[32m0|crafthos | [39m[Socket.IO] Client connected: 74S9N8YYJvssrwGYAAAJ
+[32m0|crafthos | [39m[Socket.IO] Client 74S9N8YYJvssrwGYAAAJ joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Establishing relay to daemon at http://20.207.197.215:4000 for server srv-00010...
+[32m0|crafthos | [39m[Socket.IO] Connected to daemon at http://20.207.197.215:4000 for server srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client 74S9N8YYJvssrwGYAAAJ joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Reusing daemon connection for srv-00010 (refs: 2)
+[32m0|crafthos | [39m[Control] VM crafthost-node-india has 0 running servers. Triggering deallocation...
+[32m0|crafthos | [39m[Azure Orchestrator] Request to deallocate VM: crafthost-node-india
+[32m0|crafthos | [39m[Socket.IO] Daemon disconnected for srv-00010: transport close
+[32m0|crafthos | [39m[Azure Orchestrator] VM crafthost-node-india successfully deallocated in Azure!
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: 74S9N8YYJvssrwGYAAAJ
+[32m0|crafthos | [39m[Socket.IO] No clients left for srv-00010. Disconnecting daemon relay.
+[32m0|crafthos | [39m[Socket.IO] Client connected: W_MTMMnUSUx9bCr3AAAL
+[32m0|crafthos | [39m[Socket.IO] Client W_MTMMnUSUx9bCr3AAAL joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client W_MTMMnUSUx9bCr3AAAL joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client connected: aN8PkW7vsE3Y0w7hAAAN
+[32m0|crafthos | [39m[Socket.IO] Client aN8PkW7vsE3Y0w7hAAAN joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: aN8PkW7vsE3Y0w7hAAAN
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: W_MTMMnUSUx9bCr3AAAL
+[32m0|crafthos | [39m[Socket.IO] Client connected: 9_smYLxIUATS83bBAAAQ
+[32m0|crafthos | [39m[Socket.IO] Client connected: kxReiWo6fi-QPh-oAAAR
+[32m0|crafthos | [39m[Socket.IO] Client 9_smYLxIUATS83bBAAAQ joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client kxReiWo6fi-QPh-oAAAR joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: kxReiWo6fi-QPh-oAAAR
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: 9_smYLxIUATS83bBAAAQ
+[32m0|crafthos | [39m🚀 CraftHost Control Plane running on port 3000
+[32m0|crafthos | [39m   Mode: Azure Cloud
+[32m0|crafthos | [39m✅ Successfully connected to MongoDB Atlas
+[32m0|crafthos | [39m🚀 CraftHost Control Plane running on port 3000
+[32m0|crafthos | [39m   Mode: Azure Cloud
+[32m0|crafthos | [39m✅ Successfully connected to MongoDB Atlas
+[32m0|crafthos | [39m🚀 CraftHost Control Plane running on port 3000
+[32m0|crafthos | [39m   Mode: Azure Cloud
+[32m0|crafthos | [39m✅ Successfully connected to MongoDB Atlas
+[32m0|crafthos | [39m[Socket.IO] Client connected: hvApt_fXhSZKo456AAAB
+[32m0|crafthos | [39m[Socket.IO] Client hvApt_fXhSZKo456AAAB joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client connected: Codu8TV1OBLgZxxcAAAD
+[32m0|crafthos | [39m[Socket.IO] Client Codu8TV1OBLgZxxcAAAD joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client hvApt_fXhSZKo456AAAB joined server-srv-00010
+[32m0|crafthos | [39m[Control] Starting deallocated VM crafthost-node-india for server srv-00010...
+[32m0|crafthos | [39m[Azure Orchestrator] Request to start VM: crafthost-node-india
+[32m0|crafthos | [39m[Registry] ✅ Daemon registered: crafthost-node-india (centralindia) @ 20.207.197.215
+[32m0|crafthos | [39m[Azure Orchestrator] VM crafthost-node-india successfully started in Azure!
+[32m0|crafthos | [39m[Azure IP Resolver] Resolved IP for crafthost-node-india -> 20.207.197.215
+[32m0|crafthos | [39m[Socket.IO] Establishing relay to daemon at http://20.207.197.215:4000 for server srv-00010...
+[32m0|crafthos | [39m[Socket.IO] Connected to daemon at http://20.207.197.215:4000 for server srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: Codu8TV1OBLgZxxcAAAD
+[32m0|crafthos | [39m[Socket.IO] Client connected: pj3krN8JnAZ7uVVlAAAF
+[32m0|crafthos | [39m[Socket.IO] Client pj3krN8JnAZ7uVVlAAAF joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Reusing daemon connection for srv-00010 (refs: 2)
+[32m0|crafthos | [39m[Socket.IO] Daemon disconnected for srv-00010: io client disconnect
+[32m0|crafthos | [39m🚀 CraftHost Control Plane running on port 3000
+[32m0|crafthos | [39m   Mode: Azure Cloud
+[32m0|crafthos | [39m✅ Successfully connected to MongoDB Atlas
+[32m0|crafthos | [39m[Socket.IO] Client connected: YizX83d2vdY0MRf_AAAB
+[32m0|crafthos | [39m[Socket.IO] Client YizX83d2vdY0MRf_AAAB joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Establishing relay to daemon at http://20.207.197.215:4000 for server srv-00010...
+[32m0|crafthos | [39m[Socket.IO] Connected to daemon at http://20.207.197.215:4000 for server srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client connected: 20DFTc2ZJIK8oF8mAAAD
+[32m0|crafthos | [39m[Socket.IO] Client 20DFTc2ZJIK8oF8mAAAD joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Reusing daemon connection for srv-00010 (refs: 2)
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: YizX83d2vdY0MRf_AAAB
+[32m0|crafthos | [39m[Socket.IO] Daemon disconnected for srv-00010: transport close
+[32m0|crafthos | [39m[Socket.IO] Connected to daemon at http://20.207.197.215:4000 for server srv-00010
+[32m0|crafthos | [39m[Registry] ✅ Daemon registered: crafthost-node-india (centralindia) @ 20.207.197.215
+[32m0|crafthos | [39m[Registry] ✅ Daemon registered: crafthost-node-koera (koreacentral) @ 4.217.197.224
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: 20DFTc2ZJIK8oF8mAAAD
+[32m0|crafthos | [39m[Socket.IO] No clients left for srv-00010. Disconnecting daemon relay.
+[32m0|crafthos | [39m[Socket.IO] Daemon disconnected for srv-00010: io client disconnect
+[32m0|crafthos | [39m[Socket.IO] Client connected: zPzCZW18i-iAMjJPAAAF
+[32m0|crafthos | [39m[Socket.IO] Client zPzCZW18i-iAMjJPAAAF joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Establishing relay to daemon at http://20.207.197.215:4000 for server srv-00010...
+[32m0|crafthos | [39m[Socket.IO] Connected to daemon at http://20.207.197.215:4000 for server srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client zPzCZW18i-iAMjJPAAAF joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Reusing daemon connection for srv-00010 (refs: 2)
+[32m0|crafthos | [39m[Socket.IO] Reusing daemon connection for srv-00010 (refs: 3)
+[32m0|crafthos | [39m[Socket.IO] Client connected: ZO8sLacXojJUmBRBAAAH
+[32m0|crafthos | [39m[Socket.IO] Client ZO8sLacXojJUmBRBAAAH joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Reusing daemon connection for srv-00010 (refs: 4)
+[32m0|crafthos | [39m[Socket.IO] Daemon disconnected for srv-00010: io client disconnect
+[32m0|crafthos | [39m[Control] VM crafthost-node-india has 0 running servers. Triggering deallocation...
+[32m0|crafthos | [39m[Azure Orchestrator] Request to deallocate VM: crafthost-node-india
+[32m0|crafthos | [39m[Azure Orchestrator] VM crafthost-node-india successfully deallocated in Azure!
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: zPzCZW18i-iAMjJPAAAF
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: ZO8sLacXojJUmBRBAAAH
+[32m0|crafthos | [39m[Socket.IO] Client connected: Q7UnKVB78c8pUo8yAAAK
+[32m0|crafthos | [39m[Socket.IO] Client connected: 2GUQZzJHvxh79T1LAAAL
+[32m0|crafthos | [39m[Socket.IO] Client 2GUQZzJHvxh79T1LAAAL joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client Q7UnKVB78c8pUo8yAAAK joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client Q7UnKVB78c8pUo8yAAAK joined server-srv-00010
+[32m0|crafthos | [39m[Control] Starting deallocated VM crafthost-node-india for server srv-00010...
+[32m0|crafthos | [39m[Azure Orchestrator] Request to start VM: crafthost-node-india
+[32m0|crafthos | [39m[Registry] ✅ Daemon registered: crafthost-node-india (centralindia) @ 20.207.197.215
+[32m0|crafthos | [39m[Azure Orchestrator] VM crafthost-node-india successfully started in Azure!
+[32m0|crafthos | [39m[Azure IP Resolver] Resolved IP for crafthost-node-india -> 20.207.197.215
+[32m0|crafthos | [39m[Socket.IO] Establishing relay to daemon at http://20.207.197.215:4000 for server srv-00010...
+[32m0|crafthos | [39m[Socket.IO] Connected to daemon at http://20.207.197.215:4000 for server srv-00010
+[32m0|crafthos | [39m[Socket.IO] Daemon disconnected for srv-00010: transport close
+[32m0|crafthos | [39m[Socket.IO] Connected to daemon at http://20.207.197.215:4000 for server srv-00010
+[32m0|crafthos | [39m[Registry] ✅ Daemon registered: crafthost-node-india (centralindia) @ 20.207.197.215
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: Q7UnKVB78c8pUo8yAAAK
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: 2GUQZzJHvxh79T1LAAAL
+[32m0|crafthos | [39m[Socket.IO] No clients left for srv-00010. Disconnecting daemon relay.
+[32m0|crafthos | [39m[Socket.IO] Daemon disconnected for srv-00010: io client disconnect
+[32m0|crafthos | [39m[Socket.IO] Client connected: 2nvxCevQZzS5Z92yAAAO
+[32m0|crafthos | [39m[Socket.IO] Client connected: uM1ez5Z-6TuyOuZWAAAP
+[32m0|crafthos | [39m[Socket.IO] Client 2nvxCevQZzS5Z92yAAAO joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Establishing relay to daemon at http://20.207.197.215:4000 for server srv-00010...
+[32m0|crafthos | [39m[Socket.IO] Connected to daemon at http://20.207.197.215:4000 for server srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client uM1ez5Z-6TuyOuZWAAAP joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Reusing daemon connection for srv-00010 (refs: 2)
+[32m0|crafthos | [39m[Socket.IO] Client 2nvxCevQZzS5Z92yAAAO joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Reusing daemon connection for srv-00010 (refs: 3)
+[32m0|crafthos | [39m[Socket.IO] Reusing daemon connection for srv-00010 (refs: 4)
+[32m0|crafthos | [39m[Socket.IO] Daemon disconnected for srv-00010: io client disconnect
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: uM1ez5Z-6TuyOuZWAAAP
+[32m0|crafthos | [39m[Control] VM crafthost-node-india has 0 running servers. Triggering deallocation...
+[32m0|crafthos | [39m[Azure Orchestrator] Request to deallocate VM: crafthost-node-india
+[32m0|crafthos | [39m[Azure Orchestrator] VM crafthost-node-india successfully deallocated in Azure!
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: 2nvxCevQZzS5Z92yAAAO
+[32m0|crafthos | [39m[Socket.IO] Client connected: 4jDvGlUTdbmUjYATAAAR
+[32m0|crafthos | [39m[Socket.IO] Client 4jDvGlUTdbmUjYATAAAR joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client 4jDvGlUTdbmUjYATAAAR joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: 4jDvGlUTdbmUjYATAAAR
+[32m0|crafthos | [39m[Socket.IO] Client connected: FFO2kz4NxkG4OAH5AAAT
+[32m0|crafthos | [39m[Socket.IO] Client FFO2kz4NxkG4OAH5AAAT joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: FFO2kz4NxkG4OAH5AAAT
+[32m0|crafthos | [39m[Socket.IO] Client connected: 6edX8VxJClJaXGKjAAAV
+[32m0|crafthos | [39m[Socket.IO] Client 6edX8VxJClJaXGKjAAAV joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: 6edX8VxJClJaXGKjAAAV
+[32m0|crafthos | [39m[Socket.IO] Client connected: vz0AOrYwx2JaBBkyAAAX
+[32m0|crafthos | [39m[Socket.IO] Client vz0AOrYwx2JaBBkyAAAX joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client vz0AOrYwx2JaBBkyAAAX joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: vz0AOrYwx2JaBBkyAAAX
+[32m0|crafthos | [39m[Socket.IO] Client connected: e_kRPUQE8dd5miviAAAZ
+[32m0|crafthos | [39m[Socket.IO] Client e_kRPUQE8dd5miviAAAZ joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client e_kRPUQE8dd5miviAAAZ joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client connected: W0k5Q-SULk3e4TqwAAAb
+[32m0|crafthos | [39m[Socket.IO] Client W0k5Q-SULk3e4TqwAAAb joined server-srv-00010
+[32m0|crafthos | [39m[Control] Starting deallocated VM crafthost-node-india for server srv-00010...
+[32m0|crafthos | [39m[Azure Orchestrator] Request to start VM: crafthost-node-india
+[32m0|crafthos | [39m[Registry] ✅ Daemon registered: crafthost-node-india (centralindia) @ 20.207.197.215
+[32m0|crafthos | [39m[Azure Orchestrator] VM crafthost-node-india successfully started in Azure!
+[32m0|crafthos | [39m[Azure IP Resolver] Resolved IP for crafthost-node-india -> 20.207.197.215
+[32m0|crafthos | [39m[Socket.IO] Establishing relay to daemon at http://20.207.197.215:4000 for server srv-00010...
+[32m0|crafthos | [39m[Socket.IO] Connected to daemon at http://20.207.197.215:4000 for server srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: W0k5Q-SULk3e4TqwAAAb
+[32m0|crafthos | [39m[Socket.IO] Daemon disconnected for srv-00010: io client disconnect
+[32m0|crafthos | [39m[Control] VM crafthost-node-india has 0 running servers. Triggering deallocation...
+[32m0|crafthos | [39m[Azure Orchestrator] Request to deallocate VM: crafthost-node-india
+[32m0|crafthos | [39m[Azure Orchestrator] VM crafthost-node-india successfully deallocated in Azure!
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: e_kRPUQE8dd5miviAAAZ
+[32m0|crafthos | [39m🚀 CraftHost Control Plane running on port 3000
+[32m0|crafthos | [39m   Mode: Azure Cloud
+[32m0|crafthos | [39m✅ Successfully connected to MongoDB Atlas
+[32m0|crafthos | [39m[Socket.IO] Client connected: 4w-W8rhBmYpM8_f2AAAB
+[32m0|crafthos | [39m[Socket.IO] Client 4w-W8rhBmYpM8_f2AAAB joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: 4w-W8rhBmYpM8_f2AAAB
+[32m0|crafthos | [39m[Socket.IO] Client connected: XZZNTE_aI0ooPWyVAAAD
+[32m0|crafthos | [39m[Socket.IO] Client XZZNTE_aI0ooPWyVAAAD joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client XZZNTE_aI0ooPWyVAAAD joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: XZZNTE_aI0ooPWyVAAAD
+[32m0|crafthos | [39m[Socket.IO] Client connected: Q14VNvIytXgpL8Z2AAAF
+[32m0|crafthos | [39m[Socket.IO] Client Q14VNvIytXgpL8Z2AAAF joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client Q14VNvIytXgpL8Z2AAAF joined server-srv-00010
+[32m0|crafthos | [39m🚀 CraftHost Control Plane running on port 3000
+[32m0|crafthos | [39m   Mode: Azure Cloud
+[32m0|crafthos | [39m✅ Successfully connected to MongoDB Atlas
+[32m0|crafthos | [39m[Socket.IO] Client connected: O70jDfruArVCWlaAAAAB
+[32m0|crafthos | [39m[Socket.IO] Client O70jDfruArVCWlaAAAAB joined server-srv-00010
+[32m0|crafthos | [39m🚀 CraftHost Control Plane running on port 3000
+[32m0|crafthos | [39m   Mode: Azure Cloud
+[32m0|crafthos | [39m✅ Successfully connected to MongoDB Atlas
+[32m0|crafthos | [39m[Socket.IO] Client connected: hpKvo8-D0BqBTyOMAAAB
+[32m0|crafthos | [39m[Socket.IO] Client hpKvo8-D0BqBTyOMAAAB joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: hpKvo8-D0BqBTyOMAAAB
+[32m0|crafthos | [39m[Socket.IO] Client connected: 0NedPZ3FasbjAW8VAAAD
+[32m0|crafthos | [39m[Socket.IO] Client 0NedPZ3FasbjAW8VAAAD joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client 0NedPZ3FasbjAW8VAAAD joined server-srv-00010
+[32m0|crafthos | [39m[Socket.IO] Client disconnected: 0NedPZ3FasbjAW8VAAAD
+
+[90m/home/SAYMYNAME/.pm2/logs/crafthost-api-error.log last 200 lines:[39m
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+[31m0|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m0|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m0|crafthos | [39m  errno: -111,
+[31m0|crafthos | [39m  code: 'ECONNREFUSED',
+[31m0|crafthos | [39m  syscall: 'connect',
+[31m0|crafthos | [39m  address: '127.0.0.1',
+[31m0|crafthos | [39m  port: 6380
+[31m0|crafthos | [39m}
+
+[90m/home/SAYMYNAME/.pm2/logs/crafthost-scheduler-error.log last 200 lines:[39m
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39m[Scheduler] Worker error: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m[Scheduler] Worker error: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39m[Scheduler] Worker error: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m[Scheduler] Worker error: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39m[Scheduler] Worker error: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m[Scheduler] Worker error: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39m[Scheduler] Worker error: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m[Scheduler] Worker error: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39m[Scheduler] Worker error: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m[Scheduler] Worker error: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39m[Scheduler] Worker error: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m[Scheduler] Worker error: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+[31m1|crafthos | [39mError: connect ECONNREFUSED 127.0.0.1:6380
+[31m1|crafthos | [39m    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+[31m1|crafthos | [39m  errno: -111,
+[31m1|crafthos | [39m  code: 'ECONNREFUSED',
+[31m1|crafthos | [39m  syscall: 'connect',
+[31m1|crafthos | [39m  address: '127.0.0.1',
+[31m1|crafthos | [39m  port: 6380
+[31m1|crafthos | [39m}
+
+

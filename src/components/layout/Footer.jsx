@@ -9,8 +9,8 @@ export default function Footer() {
         <div className="footer-grid">
           {/* Brand */}
           <div className="footer-brand">
-            <div className="navbar-logo" style={{ marginBottom: '1rem' }}>
-              <img src={logoImg} alt="CraftHost Logo" style={{ height: '42px', marginRight: '8px', borderRadius: '4px' }} />
+            <div className="navbar-logo">
+              <img src={logoImg} alt="CraftHost Logo" className="logo-img logo-img-lg" />
               <span className="logo-text">CraftHost</span>
             </div>
             <p className="footer-desc">

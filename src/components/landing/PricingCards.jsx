@@ -131,7 +131,6 @@ export default function PricingCards() {
                 to="/signup"
                 className={`btn ${plan.popular ? 'btn-primary' : 'btn-secondary'} btn-lg pricing-cta`}
                 id={`pricing-cta-${plan.name.toLowerCase()}`}
-                style={{textDecoration: 'none', display: 'flex'}}
               >
                 <span>{plan.cta}</span>
                 <ArrowRight size={16} />

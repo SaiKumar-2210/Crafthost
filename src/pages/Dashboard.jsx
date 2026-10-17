@@ -22,7 +22,7 @@ export default function Dashboard() {
         <header className="dashboard-header">
           <div className="search-bar hide-mobile">
             <Search size={18} className="search-icon" />
-            <input type="text" className="search-input" placeholder="Search servers..." style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none' }} />
+            <input type="text" className="search-input" placeholder="Search servers..." />
           </div>
           
           <div className="header-actions">
@@ -42,14 +42,14 @@ export default function Dashboard() {
 
           <StatsGrid />
 
-          <div className="dashboard-grid" style={{ gridTemplateColumns: '1fr' }}>
+          <div className="dashboard-grid full-width">
             {showBackups ? (
               <BackupsSection />
             ) : (
               <div className="servers-section">
                 <div className="section-header-compact">
                   <h2 className="section-title-sm">Active Servers</h2>
-                  <button className="btn-link text-sm">View All</button>
+                  <button type="button" className="btn-link">View All</button>
                 </div>
                 <div className="servers-list">
                   {servers.map(server => (

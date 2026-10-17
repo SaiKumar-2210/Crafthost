@@ -21,9 +21,9 @@ export default function ServerPanel() {
     return (
       <div className="dashboard-layout">
         <Sidebar />
-        <div className="dashboard-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="card" style={{ padding: '2rem', textAlign: 'center' }}>
-            <h2 style={{ marginBottom: '1rem' }}>Server Not Found</h2>
+        <div className="dashboard-main server-not-found">
+          <div className="card">
+            <h2>Server Not Found</h2>
             <Link to="/dashboard" className="btn btn-primary">Back to Dashboard</Link>
           </div>
         </div>
@@ -99,9 +99,9 @@ export default function ServerPanel() {
             <div className="info-primary">
               <div className={`status-pulse ${isOnline ? 'pulse-online' : isTransitioning ? 'pulse-starting' : ''}`} />
               <div>
-                <h1 className="server-banner-name" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <h1 className="server-banner-name">
                   {server.name}
-                  <span className={`badge ${isOnline ? 'badge-success' : isTransitioning ? 'badge-success' : 'badge-neutral'}`} style={{ fontSize: '0.85rem', fontWeight: '500', padding: '4px 8px' }}>
+                  <span className={`badge ${isOnline ? 'badge-success' : isTransitioning ? 'badge-warning' : 'badge-neutral'}`}>
                     {statusLabel}
                   </span>
                 </h1>

@@ -65,8 +65,8 @@ export default function PlayerList({ visible = false }) {
 
   if (!isOnline) {
     return (
-      <div className="player-list card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}>
-        <h3 style={{ color: '#888' }}>Server is offline. Start the server to view players.</h3>
+      <div className="player-list card player-list-offline">
+        <h3>Server is offline. Start the server to view players.</h3>
       </div>
     )
   }

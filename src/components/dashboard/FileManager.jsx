@@ -178,7 +178,6 @@ export default function FileManager() {
           value={fileContent}
           onChange={e => setFileContent(e.target.value)}
           spellCheck="false"
-          style={{ height: '75vh', width: '100%', padding: '16px', fontFamily: "'Fira Code', 'Courier New', monospace", backgroundColor: '#1e1e1e', color: '#d4d4d4', border: '1px solid #333', borderRadius: '4px', resize: 'none', outline: 'none', lineHeight: '1.5' }}
         />
       </div>
     )
@@ -229,9 +228,9 @@ export default function FileManager() {
             )}
             
             {loading ? (
-              <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem' }}>Loading files...</td></tr>
+              <tr><td colSpan="4" className="file-loading">Loading files...</td></tr>
             ) : files.map((file, i) => (
-              <tr key={i} className="file-row" onClick={() => handleItemClick(file)} style={{ cursor: file.type === 'folder' ? 'pointer' : 'default' }}>
+              <tr key={i} className={`file-row ${file.type === 'folder' ? 'cursor-pointer' : ''}`} onClick={() => handleItemClick(file)}>
                 <td className="col-name">
                   <div className="file-name-cell">
                     {file.type === 'folder' ? (
@@ -257,7 +256,7 @@ export default function FileManager() {
               </tr>
             ))}
             {files.length === 0 && !loading && (
-              <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>Empty directory</td></tr>
+              <tr><td colSpan="4" className="file-empty">Empty directory</td></tr>
             )}
           </tbody>
         </table>

@@ -104,8 +104,8 @@ export default function DeployPage() {
            r.country.includes(q)
   })
 
-  // Group visible regions
-  const regionGroups = ['Americas', 'Europe', 'Asia Pacific', 'Middle East & Africa']
+  // Group visible regions (must match backend SAFE_REGION_METADATA group values)
+  const regionGroups = ['North America', 'Europe', 'Asia Pacific', 'Middle East & Africa']
     .map(group => ({
       group,
       items: visibleRegions.filter(r => r.group === group)

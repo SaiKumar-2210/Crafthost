@@ -173,7 +173,7 @@ export default function ServerSettings() {
   }
 
   if (loadingSettings) {
-    return <div className="server-settings"><div className="settings-content card" style={{ padding: '2rem', textAlign: 'center' }}>Loading settings...</div></div>
+    return <div className="server-settings"><div className="settings-content card settings-loading">Loading settings...</div></div>
   }
 
   return (
@@ -194,19 +194,19 @@ export default function ServerSettings() {
           <div className="settings-form">
             <div className="settings-header">
               <div>
-                <h2 className="settings-title" style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                <h2 className="settings-title settings-title-row">
                   <Users size={18} /> Access Sharing
                 </h2>
                 <p className="settings-desc">Grant other registered accounts access to manage this server.</p>
               </div>
             </div>
 
-            <form onSubmit={handleShareAccess} className="settings-grid" style={{ marginTop: '2rem', marginBottom: '2rem', display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
-              <div className="form-group" style={{ flex: 2, marginBottom: 0 }}>
+            <form onSubmit={handleShareAccess} className="access-share-form">
+              <div className="form-group flex-grow">
                 <label>User Email</label>
                 <input type="email" name="email" className="form-control" placeholder="user@example.com" required />
               </div>
-              <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+              <div className="form-group flex-role">
                 <label>Role</label>
                 <select name="role" className="form-control" required>
                   <option value="on_off">Power Only (Start/Stop)</option>
@@ -218,33 +218,33 @@ export default function ServerSettings() {
               </button>
             </form>
 
-            <div className="settings-grid">
-              <h3 style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Shared Users</h3>
+            <div>
+              <h3 className="settings-subtitle">Shared Users</h3>
               {loadingPerms ? (
-                <div style={{ color: '#888' }}>Loading permissions...</div>
+                <div className="text-secondary">Loading permissions...</div>
               ) : permissions.length === 0 ? (
-                <div style={{ color: '#888', padding: '1rem', textAlign: 'center', border: '1px dashed var(--border-primary)', borderRadius: '8px' }}>
+                <div className="access-empty">
                   Not shared with anyone yet.
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div className="access-list">
                   {permissions.map((p, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', border: '1px solid var(--border-primary)', borderRadius: '8px', background: 'var(--bg-secondary)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>
+                    <div key={i} className="access-row">
+                      <div className="access-user">
+                        <div className="access-avatar">
                           {p.name.substring(0, 2).toUpperCase()}
                         </div>
                         <div>
-                          <div style={{ fontWeight: '500', color: '#fff' }}>{p.name}</div>
-                          <div style={{ fontSize: '12px', color: '#aaa' }}>{p.email}</div>
+                          <div className="access-user-name">{p.name}</div>
+                          <div className="access-user-email">{p.email}</div>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <span className={`badge ${p.role === 'full' ? 'badge-primary' : 'badge-neutral'}`} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div className="access-row-actions">
+                        <span className={`badge ${p.role === 'full' ? 'badge-primary' : 'badge-neutral'}`}>
                           <Shield size={12} />
                           {p.role === 'full' ? 'Full Control' : 'Power Only'}
                         </span>
-                        <button className="btn-icon btn-ghost text-danger" title="Revoke Access" onClick={() => handleRevokeAccess(p.userId)}>
+                        <button type="button" className="btn-icon btn-ghost text-danger" title="Revoke Access" onClick={() => handleRevokeAccess(p.userId)}>
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -258,21 +258,21 @@ export default function ServerSettings() {
           <div className="settings-form">
             <div className="settings-header">
               <div>
-                <h2 className="settings-title text-danger" style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                <h2 className="settings-title text-danger settings-title-row">
                   <AlertTriangle size={18} /> Danger Zone
                 </h2>
                 <p className="settings-desc text-danger">Irreversible catastrophic actions for this server instance.</p>
               </div>
             </div>
             <div className="settings-grid" style={{ marginTop: '2rem' }}>
-              <div style={{ border: '1px solid var(--border-primary)', padding: '24px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="danger-card">
                 <div>
-                  <h4 style={{ fontWeight: 'bold', color: '#fff', marginBottom: '8px' }}>Delete this server</h4>
-                  <p style={{ color: '#aaa', fontSize: '13px' }}>Once you delete a server, there is no going back. Please be certain.</p>
+                  <h4>Delete this server</h4>
+                  <p>Once you delete a server, there is no going back. Please be certain.</p>
                 </div>
                 <button 
-                  className="btn btn-primary" 
-                  style={{ backgroundColor: 'var(--error-color)', borderColor: 'var(--error-color)' }}
+                  type="button"
+                  className="btn btn-danger"
                   onClick={handleDeleteServer}
                   disabled={deleting}
                 >

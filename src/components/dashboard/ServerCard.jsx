@@ -74,13 +74,13 @@ export default function ServerCard({ server }) {
     <div className={`server-card card ${isTransitioning ? 'starting-animation' : ''} ${isOnline ? 'server-live' : ''}`}>
       <div className="server-card-header">
         <div className="server-info">
-          <div className={`status-indicator ${isOnline ? 'status-online' : isTransitioning ? 'status-online' : 'status-offline'}`}>
+          <div className={`status-indicator ${isOnline ? 'status-online' : isTransitioning ? 'status-warning' : 'status-offline'}`}>
             {isTransitioning && <RotateCcw size={10} className="spin" />}
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h3 className="server-name" style={{ margin: 0 }}>{server.name}</h3>
-              <span className={`badge ${isOnline ? 'badge-success' : isTransitioning ? 'badge-success' : 'badge-neutral'}`} style={{ fontSize: '0.7rem', padding: '2px 6px' }}>
+            <div className="server-title-row">
+              <h3 className="server-name">{server.name}</h3>
+              <span className={`badge ${isOnline ? 'badge-success' : isTransitioning ? 'badge-warning' : 'badge-neutral'}`}>
                 {statusLabel}
               </span>
             </div>
@@ -91,6 +91,7 @@ export default function ServerCard({ server }) {
                 return server.port ? `${host}:${server.port}` : host;
               })()}</span>
               <button 
+                type="button"
                 className="btn-icon btn-ghost btn-xs copy-btn"
                 onClick={() => {
                   if (!server.ip) return;
@@ -104,10 +105,10 @@ export default function ServerCard({ server }) {
               </button>
             </div>
             
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', marginTop: '10px' }}>
+            <div className="server-meta-row">
               <div className="server-version badge badge-neutral">{server.node}</div>
               <div className="server-version badge badge-neutral">{server.versionType} {server.versionNumber}</div>
-              {isOnline && <div className="server-version badge badge-success" style={{ backgroundColor: 'var(--status-online)', color: '#000', border: 'none' }}>Uptime: {server.uptime}</div>}
+              {isOnline && <div className="server-version badge badge-success uptime-badge">Uptime: {server.uptime}</div>}
             </div>
           </div>
         </div>
@@ -181,7 +182,7 @@ export default function ServerCard({ server }) {
             <span>Restart</span>
           </button>
         </div>
-        <Link to={`/server/${server.id}`} className="btn btn-secondary btn-sm manage-btn" style={{textDecoration: 'none', display: 'flex'}}>
+        <Link to={`/server/${server.id}`} className="btn btn-secondary btn-sm manage-btn">
           <span>Manage</span>
           <Settings size={14} />
         </Link>

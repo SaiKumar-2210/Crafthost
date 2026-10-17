@@ -35,12 +35,13 @@ export default function Sidebar() {
     <aside className={`sidebar ${collapsed ? 'sidebar-collapsed' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-logo">
-          <img src={logoImg} alt="CraftHost Logo" style={{ height: '32px', marginRight: '8px', borderRadius: '4px' }} />
+          <img src={logoImg} alt="CraftHost Logo" className="logo-img" />
           {!collapsed && <span className="logo-text">CraftHost</span>}
         </div>
         <button 
-          className="btn-icon collapse-btn"
+          className="collapse-btn"
           onClick={() => setCollapsed(!collapsed)}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
@@ -83,8 +84,8 @@ export default function Sidebar() {
           ))}
           <button 
             onClick={handleLogout} 
-            className="sidebar-link" 
-            style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer' }}
+            className="sidebar-link"
+            type="button"
           >
             <LogOut size={20} />
             {!collapsed && <span>Log out</span>}
@@ -93,10 +94,10 @@ export default function Sidebar() {
       </div>
 
       <div className="sidebar-footer">
-        <div style={{ padding: '0 1rem 1rem 1rem' }}>
+        <div className="sidebar-deploy-wrap">
           <button 
             className="btn btn-deploy" 
-            style={{ width: '100%', justifyContent: collapsed ? 'center' : 'flex-start', padding: collapsed ? '0.75rem 0' : '0.75rem 1rem' }}
+            type="button"
             onClick={() => navigate('/deploy')}
           >
             <Plus size={18} />

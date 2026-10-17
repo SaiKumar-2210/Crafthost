@@ -1,4 +1,5 @@
 import { HardDrive, Download, Trash2, Clock } from 'lucide-react'
+import './BackupsSection.css'
 
 export default function BackupsSection() {
   // Placeholder data for backups
@@ -12,41 +13,43 @@ export default function BackupsSection() {
     <div className="servers-section">
       <div className="section-header-compact">
         <h2 className="section-title-sm">My Backups</h2>
-        <button className="btn btn-primary btn-sm">Create Backup</button>
+        <button type="button" className="btn btn-primary btn-sm">Create Backup</button>
       </div>
       
-      <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+      <div className="card backups-table-wrap">
+        <table className="backups-table">
           <thead>
-            <tr style={{ borderBottom: '1px solid var(--border-primary)', backgroundColor: 'var(--bg-elevated)' }}>
-              <th style={{ padding: '1rem', fontWeight: '600', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase' }}>File Name</th>
-              <th style={{ padding: '1rem', fontWeight: '600', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase' }}>Server</th>
-              <th style={{ padding: '1rem', fontWeight: '600', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase' }}>Size</th>
-              <th style={{ padding: '1rem', fontWeight: '600', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase' }}>Created</th>
-              <th style={{ padding: '1rem', fontWeight: '600', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
+            <tr>
+              <th>File Name</th>
+              <th>Server</th>
+              <th>Size</th>
+              <th>Created</th>
+              <th className="th-actions">Actions</th>
             </tr>
           </thead>
           <tbody>
             {backups.map((backup) => (
-              <tr key={backup.id} style={{ borderBottom: '1px solid var(--border-primary)' }}>
-                <td style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <HardDrive size={16} className="text-accent" />
-                  <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{backup.name}</span>
+              <tr key={backup.id}>
+                <td>
+                  <div className="backup-name">
+                    <HardDrive size={16} className="text-accent" />
+                    <span>{backup.name}</span>
+                  </div>
                 </td>
-                <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{backup.server}</td>
-                <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{backup.size}</td>
-                <td style={{ padding: '1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-secondary)' }}>
+                <td>{backup.server}</td>
+                <td>{backup.size}</td>
+                <td>
+                  <div className="backup-date">
                     <Clock size={14} />
                     <span>{backup.date}</span>
                   </div>
                 </td>
-                <td style={{ padding: '1rem', textAlign: 'right' }}>
-                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                    <button className="btn-icon btn-ghost btn-xs" title="Download">
+                <td className="td-actions">
+                  <div className="backup-actions">
+                    <button type="button" className="btn-icon btn-ghost btn-xs" title="Download">
                       <Download size={14} />
                     </button>
-                    <button className="btn-icon btn-ghost btn-xs text-danger" title="Delete">
+                    <button type="button" className="btn-icon btn-ghost btn-xs text-danger" title="Delete">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -57,8 +60,8 @@ export default function BackupsSection() {
         </table>
         
         {backups.length === 0 && (
-          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-tertiary)' }}>
-            <HardDrive size={32} style={{ margin: '0 auto 1rem auto', opacity: 0.5 }} />
+          <div className="backups-empty">
+            <HardDrive size={32} />
             <p>No backups found. Create one from your server dashboard.</p>
           </div>
         )}

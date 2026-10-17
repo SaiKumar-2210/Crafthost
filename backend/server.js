@@ -90,12 +90,33 @@ async function ensureServerJar(versionType, versionNumber) {
   let downloadUrl = '';
   
   if (versionType === 'Paper' && versionNumber === '1.21.11') {
-    downloadUrl = 'https://api.papermc.io/v2/projects/paper/versions/1.21.11/builds/69/downloads/paper-1.21.11-69.jar';
+    // Fetch the latest successful PaperMC build
+    try {
+      const buildsRes = await fetch('https://api.papermc.io/v2/projects/paper/versions/1.21.11/builds');
+      const buildsData = await buildsRes.json();
+      const latestBuild = buildsData.builds.filter(b => b.channel === 'default').pop();
+      if (!latestBuild) throw new Error('No stable builds found for 1.21.11');
+      downloadUrl = `https://api.papermc.io/v2/projects/paper/versions/1.21.11/builds/${latestBuild.build}/downloads/paper-1.21.11-${latestBuild.build}.jar`;
+      console.log(`[System] Using PaperMC build ${latestBuild.build} for 1.21.11`);
+    } catch (err) {
+      console.error('[System] Failed to fetch latest PaperMC build:', err.message);
+      throw new Error('Failed to determine PaperMC download URL');
+    }
   } else if (versionType === 'Vanilla' && versionNumber === '1.21.11') {
     downloadUrl = 'https://piston-data.mojang.com/v1/objects/4707d00eb834b446575d89a61a11b5d548d8c001/server.jar'; // Note: vanilla fallback URL might not perfectly match 1.21.11 hash, preferring paper.
   } else {
     // Fallback to Paper 1.21.11 
-    downloadUrl = 'https://api.papermc.io/v2/projects/paper/versions/1.21.11/builds/69/downloads/paper-1.21.11-69.jar';
+    try {
+      const buildsRes = await fetch('https://api.papermc.io/v2/projects/paper/versions/1.21.11/builds');
+      const buildsData = await buildsRes.json();
+      const latestBuild = buildsData.builds.filter(b => b.channel === 'default').pop();
+      if (!latestBuild) throw new Error('No stable builds found for 1.21.11');
+      downloadUrl = `https://api.papermc.io/v2/projects/paper/versions/1.21.11/builds/${latestBuild.build}/downloads/paper-1.21.11-${latestBuild.build}.jar`;
+      console.log(`[System] Using PaperMC build ${latestBuild.build} for 1.21.11`);
+    } catch (err) {
+      console.error('[System] Failed to fetch latest PaperMC build:', err.message);
+      throw new Error('Failed to determine PaperMC download URL');
+    }
     console.log(`[System] Unknown version. Defaulting to Paper 1.21.11`);
   }
 

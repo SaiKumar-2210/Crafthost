@@ -17,11 +17,11 @@ export default function StatsGrid() {
   ]
 
   return (
-    <div className="stats-grid stagger-children" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+    <div className="stats-grid stagger-children">
       {stats.map((stat, index) => {
         const Icon = stat.icon
         return (
-          <div className="stat-card card card-interactive" key={index}>
+          <div className="stat-card card" key={index}>
             <div className="stat-header">
               <span className="stat-label">{stat.label}</span>
               <div className="stat-icon-wrap" style={{ color: stat.color, backgroundColor: `color-mix(in srgb, ${stat.color} 15%, transparent)` }}>

@@ -59,15 +59,14 @@ export default function AdminPanel() {
     <div className="admin-layout">
       <Sidebar />
       <div className="admin-main">
-        {/* Topbar */}
-        <header className="dashboard-header" style={{ borderBottom: '1px solid var(--border-primary)', padding: '0 var(--space-xl)', height: 'var(--navbar-height)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div className="search-bar hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-card)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)' }}>
-            <Search size={18} className="text-tertiary" />
-            <input type="text" placeholder="Search VMs..." style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none' }} />
+        <header className="dashboard-header">
+          <div className="search-bar hide-mobile">
+            <Search size={18} className="search-icon" />
+            <input type="text" className="search-input" placeholder="Search VMs..." />
           </div>
           
-          <div className="header-actions" style={{ display: 'flex', gap: '1rem' }}>
-            <button className="btn-icon">
+          <div className="header-actions">
+            <button className="btn-icon" type="button" aria-label="Notifications">
               <Bell size={20} />
             </button>
           </div>
@@ -75,14 +74,14 @@ export default function AdminPanel() {
 
         <div className="admin-content">
           <div className="admin-header-block">
-            <h1 className="admin-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Shield className="text-accent" /> System Administration
+            <h1 className="admin-title">
+              <Shield className="text-accent" size={28} /> System Administration
             </h1>
             <p className="admin-subtitle">Monitor live VM nodes and infrastructure capacity.</p>
           </div>
 
           {error && (
-            <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem' }}>
+            <div className="admin-error" role="alert">
               Error loading VMs: {error}
             </div>
           )}
@@ -102,7 +101,7 @@ export default function AdminPanel() {
               <tbody>
                 {loading && vms.length === 0 ? (
                   <tr>
-                    <td colSpan="6" style={{ textAlign: 'center', padding: '3rem' }}>Loading infrastructure...</td>
+                    <td colSpan="6" className="admin-loading-cell">Loading infrastructure...</td>
                   </tr>
                 ) : (
                   vms.map(vm => (
@@ -112,23 +111,23 @@ export default function AdminPanel() {
                           <Server size={16} className={vm.status === 'running' ? 'text-accent' : 'text-tertiary'} />
                           {vm.vmName}
                         </div>
-                        <div className="vm-ip" style={{ textTransform: 'capitalize' }}>{vm.region}</div>
+                        <div className="vm-ip">{vm.region}</div>
                       </td>
                       <td>
                         <span className={`status-badge ${vm.status}`}>
                           {vm.status}
                         </span>
                       </td>
-                      <td style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                      <td className="vm-ip-mono">
                         {vm.ip || 'Unassigned'}
                       </td>
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <div style={{ background: 'var(--bg-elevated)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                            <span style={{ color: vm.runningServers > 0 ? '#10b981' : 'var(--text-secondary)' }}>{vm.runningServers}</span> / {vm.maxServers} <span style={{ fontWeight: 'normal', color: 'var(--text-tertiary)' }}>Running</span>
+                        <div className="vm-capacity">
+                          <div className="vm-capacity-pill">
+                            <span className={vm.runningServers > 0 ? 'running' : ''}>{vm.runningServers}</span> / {vm.maxServers} <span className="text-tertiary" style={{ fontWeight: 400 }}>Running</span>
                           </div>
                         </div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>
+                        <div className="vm-capacity-meta">
                           {vm.deployedServers} Total Deployed
                         </div>
                       </td>
@@ -157,11 +156,11 @@ export default function AdminPanel() {
                             </div>
                           </>
                         ) : (
-                          <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>Offline</span>
+                          <span className="admin-offline-label">Offline</span>
                         )}
                       </td>
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                        <div className="vm-heartbeat">
                           <Activity size={14} className={vm.status === 'running' && new Date() - new Date(vm.lastHeartbeat) < 15000 ? 'text-accent' : ''} />
                           {formatTimeAgo(vm.lastHeartbeat)}
                         </div>
@@ -172,7 +171,7 @@ export default function AdminPanel() {
               </tbody>
             </table>
             {vms.length === 0 && !loading && !error && (
-              <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+              <div className="admin-empty">
                 No VMs found in the database.
               </div>
             )}

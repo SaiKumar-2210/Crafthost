@@ -122,3 +122,34 @@
 .text-danger:hover {
   background: hsla(0, 84%, 60%, 0.1);
 }
+
+.code-editor-textarea {
+  height: 75vh;
+  width: 100%;
+  padding: 16px;
+  font-family: var(--font-mono);
+  background: hsl(222, 40%, 6%);
+  color: hsl(210, 20%, 88%);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  resize: none;
+  outline: none;
+  line-height: 1.55;
+  font-size: 13px;
+}
+
+.code-editor-textarea:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-primary-glow);
+}
+
+.file-loading,
+.file-empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-tertiary);
+}
+
+.file-editor {
+  gap: var(--space-md);
+}
