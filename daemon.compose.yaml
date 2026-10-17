@@ -1,0 +1,32 @@
+name: crafthost-daemon
+
+services:
+  daemon:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: crafthost-daemon:local
+    container_name: ${VM_NAME:?Set VM_NAME in daemon.env}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      CONTROL_PLANE_URL: ${CONTROL_PLANE_URL:?Set CONTROL_PLANE_URL in daemon.env}
+      DAEMON_SECRET: ${DAEMON_SECRET:?Set DAEMON_SECRET in daemon.env}
+      VM_NAME: ${VM_NAME:?Set VM_NAME in daemon.env}
+      VM_REGION: ${VM_REGION:?Set VM_REGION in daemon.env}
+      VM_PUBLIC_IP: ${VM_PUBLIC_IP:-}
+      MAX_SERVER_SLOTS: ${MAX_SERVER_SLOTS:-5}
+      MINECRAFT_BIND_IP: ${MINECRAFT_BIND_IP:-0.0.0.0}
+      SERVERS_DIR: /opt/crafthost-data/servers
+      VERSIONS_DIR: /opt/crafthost-data/versions
+      UPLOADS_DIR: /opt/crafthost-data/uploads
+    volumes:
+      # Keep host and container paths identical: the host Docker engine mounts
+      # these same paths into each Minecraft container.
+      - ${DAEMON_DATA_PATH:-/opt/crafthost-data}:/opt/crafthost-data
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "4000:4000"
+    # Minecraft ports are published directly by the host Docker daemon.
+    # Open the required TCP port range in the machine firewall/security group.

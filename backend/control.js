@@ -42,7 +42,8 @@ app.use(express.json());
 connectDB();
 app.use('/api/auth', authRouter);
 
-const DAEMON_SECRET = process.env.DAEMON_SECRET || 'crafthost-internal-node-secret';
+const DAEMON_SECRET = process.env.DAEMON_SECRET;
+if (!DAEMON_SECRET) throw new Error('DAEMON_SECRET must be set before starting the control plane.');
 
 // Region → public hostname mapping for player-facing connection addresses
 const REGION_HOSTNAMES = {
@@ -692,13 +693,15 @@ app.get('/api/system/debug-logs', (req, res) => {
 
 // AWS Region Discovery
 app.get('/api/system/aws-regions', protect, async (req, res) => {
-  if (!isAwsConfigured) {
-    return res.json({ regions: [] });
-  }
   try {
-    // Only return regions where we have provisioned VM nodes
-    const activeRegions = await VMNode.distinct('region');
+    // Regions are available when a daemon has registered, even without AWS
+    // credentials (for user-managed nodes).
+    const activeRegions = await VMNode.distinct('region', { status: 'running' });
     const availableRegions = SAFE_REGION_METADATA.filter(r => activeRegions.includes(r.value));
+
+    if (!isAwsConfigured) {
+      return res.json({ regions: availableRegions });
+    }
     
     // Fallback if none found (e.g. before initial sync), show what we statically expect
     if (availableRegions.length === 0) {

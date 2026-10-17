@@ -1,8 +1,12 @@
 const mongoose = require('mongoose');
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://saikumar22102005:projectstartup@cluster0.spzm4pc.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const MONGODB_URI = process.env.MONGODB_URI;
 
 const connectDB = async () => {
+  if (!MONGODB_URI) {
+    console.error('❌ MONGODB_URI must be set before starting CraftHost.');
+    process.exit(1);
+  }
   try {
     await mongoose.connect(MONGODB_URI);
     console.log('✅ Successfully connected to MongoDB Atlas');

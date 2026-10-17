@@ -1,0 +1,12 @@
+.git
+.github
+.agents
+node_modules
+backend/node_modules
+dist
+backend/.env
+.env
+*.log
+backend/servers
+backend/versions
+backend/uploads

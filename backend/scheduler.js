@@ -22,7 +22,8 @@ const {
 
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
-const DAEMON_SECRET = process.env.DAEMON_SECRET || 'crafthost-internal-node-secret';
+const DAEMON_SECRET = process.env.DAEMON_SECRET;
+if (!DAEMON_SECRET) throw new Error('DAEMON_SECRET must be set before starting the scheduler.');
 
 // --- Helpers ---
 

@@ -20,7 +20,8 @@ app.use(cors());
 app.use(express.json());
 
 // Daemon Authentication: Only the Central Control Plane can command this node.
-const DAEMON_SECRET = process.env.DAEMON_SECRET || 'crafthost-internal-node-secret';
+const DAEMON_SECRET = process.env.DAEMON_SECRET;
+if (!DAEMON_SECRET) throw new Error('DAEMON_SECRET must be set before starting the daemon.');
 const requireControlPlane = (req, res, next) => {
   const secret = req.headers['x-daemon-secret'];
   if (secret !== DAEMON_SECRET) return res.status(403).json({ error: 'Unauthorized Daemon Access' });
@@ -29,9 +30,9 @@ const requireControlPlane = (req, res, next) => {
 
 app.use(requireControlPlane);
 
-const SERVERS_DIR = path.join(__dirname, 'servers');
-const VERSIONS_DIR = path.join(__dirname, 'versions');
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const SERVERS_DIR = process.env.SERVERS_DIR || path.join(__dirname, 'servers');
+const VERSIONS_DIR = process.env.VERSIONS_DIR || path.join(__dirname, 'versions');
+const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads');
 
 [SERVERS_DIR, VERSIONS_DIR, UPLOADS_DIR].forEach(d => {
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
@@ -236,15 +237,15 @@ app.post('/api/daemon/power/:id', async (req, res) => {
       const rconCreds = getRconCredentials(id);
       
       const dockerArgs = [
-        'run', '-i',
+        'run', '-i', '--rm',
         `--name=mc-${id}`,
-        '-p', `${meta.port}:${meta.port}`,
+        '-p', `${process.env.MINECRAFT_BIND_IP || '0.0.0.0'}:${meta.port}:${meta.port}`,
         '-v', `${serverPath}:/data`,
         '-w', '/data'
       ];
       
       if (rconCreds) {
-        dockerArgs.push('-p', `${rconCreds.port}:${rconCreds.port}`);
+        dockerArgs.push('-p', `${process.env.MINECRAFT_BIND_IP || '0.0.0.0'}:${rconCreds.port}:${rconCreds.port}`);
       }
       
       dockerArgs.push(
@@ -630,7 +631,8 @@ io.on('connection', (socket) => {
 // =============================================
 
 // --- Fix #5b: Enforce HTTPS for CONTROL_PLANE_URL ---
-const rawControlPlaneUrl = process.env.CONTROL_PLANE_URL || 'http://localhost:3000';
+const rawControlPlaneUrl = process.env.CONTROL_PLANE_URL;
+if (!rawControlPlaneUrl) throw new Error('CONTROL_PLANE_URL must be set before starting the daemon.');
 function validateControlPlaneUrl(url) {
   if (url.startsWith('http://')) {
     if (url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1')) {
@@ -643,10 +645,15 @@ function validateControlPlaneUrl(url) {
   return url;
 }
 const CONTROL_PLANE_URL = validateControlPlaneUrl(rawControlPlaneUrl);
-const VM_NAME = process.env.VM_NAME || 'crafthost-vm-local-1';
+const VM_NAME = process.env.VM_NAME;
+if (!VM_NAME) throw new Error('VM_NAME must be set before starting the daemon.');
 const VM_REGION = process.env.VM_REGION || 'local';
+const VM_PUBLIC_IP = process.env.VM_PUBLIC_IP || '';
+const MAX_SERVER_SLOTS = Number.parseInt(process.env.MAX_SERVER_SLOTS || '5', 10);
+if (!Number.isInteger(MAX_SERVER_SLOTS) || MAX_SERVER_SLOTS < 1) throw new Error('MAX_SERVER_SLOTS must be a positive integer.');
 
 async function getPublicIp() {
+  if (VM_PUBLIC_IP) return VM_PUBLIC_IP;
   try {
     const res = await fetch('https://api.ipify.org?format=json');
     const data = await res.json();
@@ -662,7 +669,7 @@ async function registerWithControlPlane() {
     await fetch(`${CONTROL_PLANE_URL}/api/internal/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-daemon-secret': DAEMON_SECRET },
-      body: JSON.stringify({ vmName: VM_NAME, region: VM_REGION, ip, maxSlots: 5 })
+      body: JSON.stringify({ vmName: VM_NAME, region: VM_REGION, ip, maxSlots: MAX_SERVER_SLOTS })
     });
     console.log(`[Agent] ✅ Registered with Control Plane as ${VM_NAME} (${VM_REGION}) @ ${ip}`);
   } catch (err) {
@@ -684,7 +691,7 @@ async function sendHeartbeat() {
         vmName: VM_NAME,
         region: VM_REGION,
         ip,
-        maxSlots: 5,
+        maxSlots: MAX_SERVER_SLOTS,
         runningServers: Object.keys(runningProcesses),
         cpuPercent,
         ramUsedMB

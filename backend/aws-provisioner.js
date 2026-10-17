@@ -18,7 +18,7 @@ const defaultRegion = process.env.AWS_REGION || "ap-south-1";
 
 const isAwsConfigured = !!(accessKeyId && secretAccessKey);
 
-const DAEMON_SECRET = process.env.DAEMON_SECRET || 'crafthost-internal-node-secret';
+const DAEMON_SECRET = process.env.DAEMON_SECRET;
 const rawControlPlaneUrl = process.env.CONTROL_PLANE_URL || 'https://crafthost.saikumar.co.in';
 
 function validateAndNormalizeControlPlaneUrl(url) {
