@@ -85,7 +85,7 @@ jobs:
         host: ${{ secrets.AWS_VM_IP }}
         username: ${{ secrets.AWS_VM_USERNAME }}
         key: ${{ secrets.AWS_VM_SSH_KEY }}
-        command_timeout: 10m
+        command_timeout: 20m
         script: |
           # appleboy executes remote scripts through the login shell; keep this POSIX-compatible.
           set -e

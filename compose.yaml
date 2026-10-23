@@ -31,6 +31,7 @@ services:
       retries: 10
 
   control:
+    image: crafthost-control
     build:
       context: .
       dockerfile: Dockerfile
@@ -62,9 +63,7 @@ services:
       - "127.0.0.1:${CONTROL_PORT:-3000}:3000"
 
   scheduler:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: crafthost-control
     command: ["node", "backend/scheduler.js"]
     restart: unless-stopped
     environment:
