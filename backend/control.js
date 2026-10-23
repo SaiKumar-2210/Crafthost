@@ -286,21 +286,25 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
     const vmNode = gs.vmName ? await VMNode.findOne({ vmName: gs.vmName }) : null;
 
     // If starting and VM is deallocated, boot it first
-    if (action === 'start' && vmNode && isAwsConfigured) {
+    if (action === 'start' && vmNode) {
       if (vmNode.status === 'deallocated' || vmNode.status === 'unhealthy') {
+        if (!isAwsConfigured) {
+          return res.status(503).json({ error: 'This worker instance is stopped or unhealthy, but AWS instance management is not configured on the control plane.' });
+        }
         console.log(`[Control] Starting deallocated VM ${vmNode.vmName} for server ${id}...`);
         io.to(`server-${id}`).emit('console-log', `\r\n[System] VM is offline. Booting AWS VM '${vmNode.vmName}'... This will take ~45 seconds.\r\n`);
         
-        await startAwsVM(vmNode.vmName, vmNode.region);
+        await startAwsVM(vmNode.vmName, vmNode.region, vmNode.instanceId);
         vmNode.status = 'starting';
+        vmNode.noServersSince = null;
         await vmNode.save();
         io.to(`server-${id}`).emit('console-log', `[System] VM successfully started in AWS. Waiting for public IP allocation...\r\n`);
 
         // Wait for IP
         let resolvedIp = null;
-        for (let attempt = 1; attempt <= 10; attempt++) {
+        for (let attempt = 1; attempt <= 30; attempt++) {
           await new Promise(r => setTimeout(r, 4000));
-          resolvedIp = await getAwsVMPublicIP(vmNode.vmName, vmNode.region);
+          resolvedIp = await getAwsVMPublicIP(vmNode.vmName, vmNode.region, vmNode.instanceId);
           if (resolvedIp) break;
         }
         if (!resolvedIp) {
@@ -308,7 +312,7 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
           return res.status(500).json({ error: 'Failed to resolve VM IP after restarting.' });
         }
         vmNode.ip = resolvedIp;
-        vmNode.status = 'running';
+        vmNode.status = 'starting';
         await vmNode.save();
         
         io.to(`server-${id}`).emit('console-log', `[System] VM IP assigned (${resolvedIp}). Waiting for daemon to start...\r\n`);
@@ -317,8 +321,29 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
         gs.ip = resolvedIp;
         await gs.save();
 
-        // Wait for daemon to boot
-        await new Promise(r => setTimeout(r, 5000));
+        // Wait for Docker and the daemon container to be healthy after the EC2 boot.
+        let daemonReady = false;
+        for (let attempt = 1; attempt <= 24; attempt++) {
+          try {
+            const healthRes = await fetch(`http://${resolvedIp}:4000/api/daemon/status`, {
+              headers: { 'x-daemon-secret': DAEMON_SECRET },
+            });
+            if (healthRes.ok) {
+              daemonReady = true;
+              break;
+            }
+          } catch {
+            // The daemon is not reachable yet; keep polling while the instance boots.
+          }
+          await new Promise(r => setTimeout(r, 5000));
+        }
+        if (!daemonReady) {
+          vmNode.status = 'unhealthy';
+          await vmNode.save();
+          return res.status(504).json({ error: 'EC2 started, but its CraftHost daemon did not become reachable in time.' });
+        }
+        vmNode.status = 'running';
+        await vmNode.save();
         io.to(`server-${id}`).emit('console-log', `[System] VM is ready! Sending start command to Minecraft daemon...\r\n`);
       }
     }
@@ -335,7 +360,7 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
 
     // Update GameServer status
     if (action === 'start' || action === 'restart') {
-      await GameServer.updateOne({ serverId: id }, { status: 'online' });
+      await GameServer.updateOne({ serverId: id }, { status: 'online', noPlayersSince: null });
 
       // Establish Socket.IO relay to daemon so console logs flow to browser.
       // This handles the race where the browser joined the room before the VM was ready.
@@ -355,31 +380,8 @@ app.post('/api/servers/:id/power', protect, checkServerAccess, async (req, res) 
           delete daemonSockets[id];
         }
         // Set final offline status after shutdown logs have been captured
-        GameServer.updateOne({ serverId: id }, { status: 'offline' }).catch(() => {});
+        GameServer.updateOne({ serverId: id }, { status: 'offline', noPlayersSince: null }).catch(() => {});
       }, 30000);
-    }
-
-    // Auto-deallocation check for stop action
-    if (action === 'stop' && vmNode && isAwsConfigured && !vmNode.persistent) {
-      setTimeout(async () => {
-        try {
-          const statusRes = await fetch(`${nodeUrl}/api/daemon/status`, {
-            headers: { 'x-daemon-secret': DAEMON_SECRET },
-          });
-          const statusData = await statusRes.json();
-          const activeCount = statusData.running ? statusData.running.length : 0;
-
-          if (activeCount === 0) {
-            console.log(`[Control] VM ${vmNode.vmName} has 0 running servers. Triggering deallocation...`);
-            const { deallocateAwsVM } = require('./aws-provisioner');
-            await deallocateAwsVM(vmNode.vmName, vmNode.region);
-            vmNode.status = 'deallocated';
-            await vmNode.save();
-          }
-        } catch (e) {
-          console.error('[Control] Auto-deallocation check failed:', e.message);
-        }
-      }, 45000); // Wait longer than relay cleanup (30s) to ensure logs are captured
     }
 
     res.status(dRes.status).json(data);
@@ -448,13 +450,20 @@ app.get('/api/jobs/:jobId', protect, async (req, res) => {
 // =============================================
 
 app.post('/api/internal/register', requireSystemSecret, async (req, res) => {
-  const { vmName, region, ip, maxSlots } = req.body;
+  const { vmName, instanceId, region, ip, maxSlots } = req.body;
 
   try {
+    if (instanceId) {
+      const conflictingNode = await VMNode.findOne({ vmName, instanceId: { $exists: true, $ne: instanceId } });
+      if (conflictingNode?.instanceId) {
+        return res.status(409).json({ error: `VM_NAME ${vmName} is already registered to a different EC2 instance. Set a unique VM_NAME on each daemon.` });
+      }
+    }
     await VMNode.findOneAndUpdate(
       { vmName },
       {
         ip,
+        ...(instanceId ? { instanceId } : {}),
         region,
         status: 'running',
         maxServers: maxSlots || 5,
@@ -471,18 +480,33 @@ app.post('/api/internal/register', requireSystemSecret, async (req, res) => {
 });
 
 app.post('/api/internal/heartbeat', requireSystemSecret, async (req, res) => {
-  const { vmName, region, ip, maxSlots, runningServers, cpuPercent, ramUsedMB } = req.body;
+  const { vmName, instanceId, region, ip, maxSlots, runningServers, cpuPercent, ramUsedMB } = req.body;
 
   try {
+    if (instanceId) {
+      const conflictingNode = await VMNode.findOne({ vmName, instanceId: { $exists: true, $ne: instanceId } });
+      if (conflictingNode?.instanceId) {
+        return res.status(409).json({ error: `VM_NAME ${vmName} is already registered to a different EC2 instance. Set a unique VM_NAME on each daemon.` });
+      }
+    }
     // Upsert: auto-recreate VM record if it was deleted (e.g. by clear-queue.js)
     const updateFields = {
       lastHeartbeat: new Date(),
-      status: 'running',
       runningServerIds: runningServers || [],
       cpuPercent: cpuPercent || 0,
       ramUsedMB: ramUsedMB || 0,
     };
+    const currentNode = await VMNode.findOne({ vmName }).select('noServersSince status');
+    updateFields.status = currentNode?.status === 'deallocated' && (!runningServers || runningServers.length === 0)
+      ? 'deallocated'
+      : 'running';
+    if (Array.isArray(runningServers)) {
+      updateFields.noServersSince = runningServers.length === 0
+        ? (currentNode?.noServersSince || new Date())
+        : null;
+    }
     // Include registration data if provided (self-healing heartbeat)
+    if (instanceId) updateFields.instanceId = instanceId;
     if (region) updateFields.region = region;
     if (ip) updateFields.ip = ip;
     if (maxSlots) updateFields.maxServers = maxSlots;
@@ -497,14 +521,14 @@ app.post('/api/internal/heartbeat', requireSystemSecret, async (req, res) => {
     if (runningServers && runningServers.length > 0) {
       await GameServer.updateMany(
         { serverId: { $in: runningServers }, status: { $in: ['offline', 'deploying'] } },
-        { status: 'online' }
+        { status: 'online', noPlayersSince: null }
       );
     }
     // Mark servers on this VM that AREN'T running as offline
     if (vmName) {
       await GameServer.updateMany(
         { vmName, status: 'online', serverId: { $nin: runningServers || [] } },
-        { status: 'offline' }
+        { status: 'offline', noPlayersSince: null }
       );
     }
 

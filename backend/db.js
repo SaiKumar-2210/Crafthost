@@ -38,6 +38,7 @@ ServerPermissionSchema.index({ serverId: 1, userId: 1 }, { unique: true });
 // --- VMNode: Supports multiple VMs per region + heartbeat tracking ---
 const VMNodeSchema = new mongoose.Schema({
   vmName: { type: String, required: true, unique: true },
+  instanceId: { type: String },
   // e.g. "crafthost-vm-eastus-1", "crafthost-vm-eastus-2"
   ip: { type: String },
   region: { type: String, required: true, index: true },
@@ -51,6 +52,7 @@ const VMNodeSchema = new mongoose.Schema({
   maxServers: { type: Number, default: 5 },
   // Heartbeat fields (pushed by daemon agent)
   lastHeartbeat: { type: Date },
+  noServersSince: { type: Date },
   cpuPercent: { type: Number, default: 0 },
   ramUsedMB: { type: Number, default: 0 },
   runningServerIds: { type: [String], default: [] },
@@ -77,6 +79,7 @@ const GameServerSchema = new mongoose.Schema({
     default: 'queued'
   },
   deployJobId: { type: String },
+  noPlayersSince: { type: Date },
   node: { type: String },  // Legacy compat: friendly region name
 }, { timestamps: true });
 

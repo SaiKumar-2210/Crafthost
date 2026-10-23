@@ -379,25 +379,25 @@ app.get('/api/daemon/players/:id', async (req, res) => {
   const creds = getRconCredentials(id);
   if (!creds) {
     console.log(`[RCON] No credentials found for server ${id}`);
-    return res.json({ players: [] });
+    return res.status(503).json({ error: 'RCON is not enabled or configured for this server.' });
   }
 
   // Avoid gating purely on runningProcesses[id].
   // The Node process may restart (Azure, PM2) while the Java server survives.
+  let client;
   try {
-    const client = new util.RCON();
-    await client.connect('127.0.0.1', creds.port, { timeout: 3000 });
+    client = new util.RCON();
+    await client.connect(process.env.RCON_HOST || 'host.docker.internal', creds.port, { timeout: 3000 });
     await client.login(creds.password, { timeout: 3000 });
     const listRes = await client.execute('list');
-    await client.close();
 
     let players = [];
     if (listRes) {
       const clean = listRes.replace(/§[0-9a-fk-or]/ig, '').trim();
       // Match text after "online:" to support formats like:
       // "There are 2 of a max of 20 players online: Steve, Alex"
-      const match = clean.match(/online:\s*(.+)/i);
-      if (match && match[1]) {
+      const match = clean.match(/online:\s*(.*)$/i);
+      if (match && match[1].trim()) {
         const namesStr = match[1].trim();
         if (namesStr && !/^there are/i.test(namesStr)) {
           // Read ops.json to check who has operator privileges
@@ -415,7 +415,8 @@ app.get('/api/daemon/players/:id', async (req, res) => {
             const name = p.trim();
             return {
               name,
-              ping: Math.floor(Math.random() * 50) + 10,
+              // Vanilla RCON's `list` command reports names, not per-player ping.
+              ping: null,
               isOp: opNames.includes(name.toLowerCase())
             };
           });
@@ -425,7 +426,15 @@ app.get('/api/daemon/players/:id', async (req, res) => {
     res.json({ players });
   } catch (err) {
     console.error(`[RCON] Daemon server ${id} player fetch failed:`, err.message);
-    res.json({ players: [] });
+    res.status(502).json({ error: `Could not query player list: ${err.message}` });
+  } finally {
+    if (client) {
+      try {
+        await client.close();
+      } catch {
+        // RCON may already have closed the socket after a failed query.
+      }
+    }
   }
 });
 
@@ -663,6 +672,7 @@ const CONTROL_PLANE_URL = validateControlPlaneUrl(rawControlPlaneUrl);
 const VM_NAME = process.env.VM_NAME;
 if (!VM_NAME) throw new Error('VM_NAME must be set before starting the daemon.');
 const VM_REGION = process.env.VM_REGION || 'local';
+const VM_INSTANCE_ID = process.env.VM_INSTANCE_ID || '';
 const VM_PUBLIC_IP = process.env.VM_PUBLIC_IP || '';
 const MAX_SERVER_SLOTS = Number.parseInt(process.env.MAX_SERVER_SLOTS || '5', 10);
 if (!Number.isInteger(MAX_SERVER_SLOTS) || MAX_SERVER_SLOTS < 1) throw new Error('MAX_SERVER_SLOTS must be a positive integer.');
@@ -681,11 +691,12 @@ async function getPublicIp() {
 async function registerWithControlPlane() {
   const ip = await getPublicIp();
   try {
-    await fetch(`${CONTROL_PLANE_URL}/api/internal/register`, {
+    const response = await fetch(`${CONTROL_PLANE_URL}/api/internal/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-daemon-secret': DAEMON_SECRET },
-      body: JSON.stringify({ vmName: VM_NAME, region: VM_REGION, ip, maxSlots: MAX_SERVER_SLOTS })
+      body: JSON.stringify({ vmName: VM_NAME, instanceId: VM_INSTANCE_ID, region: VM_REGION, ip, maxSlots: MAX_SERVER_SLOTS })
     });
+    if (!response.ok) throw new Error(`Registration rejected (HTTP ${response.status}): ${await response.text()}`);
     console.log(`[Agent] ✅ Registered with Control Plane as ${VM_NAME} (${VM_REGION}) @ ${ip}`);
   } catch (err) {
     console.error(`[Agent] ❌ Registration failed:`, err.message);
@@ -699,11 +710,12 @@ async function sendHeartbeat() {
     const cpuPercent = Math.round(os.loadavg()[0] * 100 / (os.cpus().length || 1));
     const ramUsedMB = Math.round((os.totalmem() - os.freemem()) / 1024 / 1024);
 
-    await fetch(`${CONTROL_PLANE_URL}/api/internal/heartbeat`, {
+    const response = await fetch(`${CONTROL_PLANE_URL}/api/internal/heartbeat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-daemon-secret': DAEMON_SECRET },
       body: JSON.stringify({
         vmName: VM_NAME,
+        instanceId: VM_INSTANCE_ID,
         region: VM_REGION,
         ip,
         maxSlots: MAX_SERVER_SLOTS,
@@ -712,6 +724,7 @@ async function sendHeartbeat() {
         ramUsedMB
       })
     });
+    if (!response.ok) throw new Error(`Heartbeat rejected (HTTP ${response.status}): ${await response.text()}`);
   } catch (err) {
     console.error(`[Agent] Heartbeat failed:`, err.message);
   }

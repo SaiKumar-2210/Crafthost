@@ -40,7 +40,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/crafthost?authSource=admin
+      MONGODB_URI: ${MONGODB_URI:?Set MONGODB_URI in .env}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
@@ -52,6 +52,7 @@ services:
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
       AWS_REGION: ${AWS_REGION:-ap-south-1}
       AWS_KEY_PAIR_NAME: ${AWS_KEY_PAIR_NAME:-}
+      AWS_INSTANCE_PROFILE_ENABLED: ${AWS_INSTANCE_PROFILE_ENABLED:-false}
     depends_on:
       mongo:
         condition: service_healthy
@@ -68,15 +69,18 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/crafthost?authSource=admin
+      MONGODB_URI: ${MONGODB_URI:?Set MONGODB_URI in .env}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
       DAEMON_SECRET: ${DAEMON_SECRET:?Set DAEMON_SECRET in .env}
+      AUTO_STOP_IDLE_SERVERS: ${AUTO_STOP_IDLE_SERVERS:-true}
+      AUTO_STOP_IDLE_EC2: ${AUTO_STOP_IDLE_EC2:-false}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
       AWS_REGION: ${AWS_REGION:-ap-south-1}
       AWS_KEY_PAIR_NAME: ${AWS_KEY_PAIR_NAME:-}
+      AWS_INSTANCE_PROFILE_ENABLED: ${AWS_INSTANCE_PROFILE_ENABLED:-false}
     depends_on:
       mongo:
         condition: service_healthy

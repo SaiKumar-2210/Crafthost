@@ -24,6 +24,10 @@ const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fet
 
 const DAEMON_SECRET = process.env.DAEMON_SECRET;
 if (!DAEMON_SECRET) throw new Error('DAEMON_SECRET must be set before starting the scheduler.');
+const AUTO_STOP_IDLE_SERVERS = process.env.AUTO_STOP_IDLE_SERVERS !== 'false';
+const AUTO_STOP_IDLE_EC2 = process.env.AUTO_STOP_IDLE_EC2 === 'true';
+const EMPTY_SERVER_STOP_MS = 10 * 60 * 1000;
+const EMPTY_INSTANCE_STOP_MS = 5 * 60 * 1000;
 
 // --- Helpers ---
 
@@ -40,6 +44,7 @@ async function daemonRequest(ip, method, path, body) {
   const opts = {
     method,
     headers: { 'x-daemon-secret': DAEMON_SECRET },
+    signal: AbortSignal.timeout(5000),
   };
   if (body) {
     opts.headers['Content-Type'] = 'application/json';
@@ -49,14 +54,27 @@ async function daemonRequest(ip, method, path, body) {
   return res;
 }
 
-async function waitForIP(vmName, region, maxAttempts = 15, intervalMs = 4000) {
+async function waitForIP(vmName, region, instanceId, maxAttempts = 15, intervalMs = 4000) {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     await new Promise(r => setTimeout(r, intervalMs));
-    const ip = await getAwsVMPublicIP(vmName, region);
+    const ip = await getAwsVMPublicIP(vmName, region, instanceId);
     if (ip) return ip;
     console.log(`[Scheduler] Waiting for IP (attempt ${attempt}/${maxAttempts})...`);
   }
   return null;
+}
+
+async function waitForDaemon(ip, maxAttempts = 24, intervalMs = 5000) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await daemonRequest(ip, 'GET', '/api/daemon/status');
+      if (response.ok) return true;
+    } catch {
+      // The EC2 may still be booting; retry until the readiness window expires.
+    }
+    if (attempt < maxAttempts) await new Promise(r => setTimeout(r, intervalMs));
+  }
+  return false;
 }
 
 // --- Placement Algorithm (Static VMs Only) ---
@@ -88,7 +106,7 @@ async function findVM(region, jobId) {
     await updateJob(jobId, { status: 'starting_vm', progress: 25, message: `Recovering VM ${vm.vmName}...` });
 
     // Try to resolve its IP and reach the daemon
-    const resolvedIp = await waitForIP(vm.vmName, region, 5, 3000);
+    const resolvedIp = await waitForIP(vm.vmName, region, vm.instanceId, 5, 3000);
     if (resolvedIp) {
       vm.ip = resolvedIp;
       vm.status = 'running';
@@ -103,11 +121,11 @@ async function findVM(region, jobId) {
     console.log(`[Scheduler] Could not reach ${vm.vmName}, attempting restart...`);
     if (isAwsConfigured) {
       try {
-        await startAwsVM(vm.vmName, region);
+        await startAwsVM(vm.vmName, region, vm.instanceId);
         vm.status = 'starting';
         await vm.save();
 
-        const ip = await waitForIP(vm.vmName, region, 10);
+        const ip = await waitForIP(vm.vmName, region, vm.instanceId, 30);
         if (ip) {
           vm.ip = ip;
           vm.status = 'running';
@@ -129,19 +147,21 @@ async function findVM(region, jobId) {
     console.log(`[Scheduler] Found deallocated VM to restart: ${vm.vmName}`);
     await updateJob(jobId, { status: 'starting_vm', progress: 30, message: `Starting VM ${vm.vmName}...` });
 
-    if (isAwsConfigured) {
-      try {
-        await startAwsVM(vm.vmName, region);
-      } catch (err) {
-        const isNotFound = err.name === 'InvalidInstanceID.NotFound' || 
-                           (err.message || '').toLowerCase().includes('not found');
-        if (isNotFound) {
-          console.warn(`[Scheduler] Ghost VM: ${vm.vmName} not found in AWS. Removing stale record.`);
-          await VMNode.deleteOne({ _id: vm._id });
-          vm = null;
-        } else {
-          throw err;
-        }
+    if (!isAwsConfigured) {
+      throw new Error(`VM ${vm.vmName} is stopped. Configure AWS instance management on the control plane before requesting it.`);
+    }
+    try {
+      if (!vm.instanceId) throw new Error(`VM ${vm.vmName} has no registered EC2 instance ID.`);
+      await startAwsVM(vm.vmName, region, vm.instanceId);
+    } catch (err) {
+      const isNotFound = err.name === 'InvalidInstanceID.NotFound' ||
+                         (err.message || '').toLowerCase().includes('not found');
+      if (isNotFound) {
+        console.warn(`[Scheduler] Ghost VM: ${vm.vmName} not found in AWS. Removing stale record.`);
+        await VMNode.deleteOne({ _id: vm._id });
+        vm = null;
+      } else {
+        throw err;
       }
     }
 
@@ -149,17 +169,26 @@ async function findVM(region, jobId) {
       vm.status = 'starting';
       await vm.save();
 
-      const resolvedIp = await waitForIP(vm.vmName, region, 10);
+      const resolvedIp = await waitForIP(vm.vmName, region, vm.instanceId, 30);
       if (!resolvedIp) {
         throw new Error(`Failed to resolve IP for VM ${vm.vmName} after restarting.`);
       }
       vm.ip = resolvedIp;
+      vm.status = 'starting';
+      vm.lastHeartbeat = new Date();
+      await vm.save();
+
+      const daemonReady = await waitForDaemon(resolvedIp);
+      if (!daemonReady) {
+        vm.status = 'unhealthy';
+        await vm.save();
+        throw new Error(`EC2 ${vm.vmName} started, but its daemon did not become reachable in time.`);
+      }
       vm.status = 'running';
       vm.lastHeartbeat = new Date();
       await vm.save();
 
       await updateJob(jobId, { progress: 55, message: 'VM started, waiting for daemon...' });
-      await new Promise(r => setTimeout(r, 10000));
       return vm;
     }
   }
@@ -262,6 +291,7 @@ async function processDeployServer(job) {
       versionNumber: versionNumber || '1.21.11',
       status: 'queued',
       deployJobId: jobId,
+      noPlayersSince: null,
     },
     { upsert: true, returnDocument: 'after' }
   );
@@ -356,29 +386,9 @@ async function processStopServer(job) {
 
   try {
     await daemonRequest(vmNode.ip, 'POST', `/api/daemon/power/${serverId}`, { action: 'stop' });
-    await GameServer.updateOne({ serverId }, { status: 'offline' });
+    await GameServer.updateOne({ serverId }, { status: 'offline', noPlayersSince: null });
   } catch (err) {
     console.error(`[Scheduler] Stop command failed for ${serverId}:`, err.message);
-  }
-
-  // Auto-deallocate check after grace period
-  if (isAwsConfigured && !vmNode.persistent) {
-    await new Promise(r => setTimeout(r, 10000));
-    try {
-      const statusRes = await daemonRequest(vmNode.ip, 'GET', '/api/daemon/status');
-      const statusData = await statusRes.json();
-      const activeCount = statusData.running ? statusData.running.length : 0;
-
-      if (activeCount === 0) {
-        console.log(`[Scheduler] VM ${vmNode.vmName} has 0 running servers. Deallocating...`);
-        await deallocateAwsVM(vmNode.vmName, vmNode.region);
-        vmNode.status = 'deallocated';
-        vmNode.activeServersCount = 0;
-        await vmNode.save();
-      }
-    } catch (err) {
-      console.error(`[Scheduler] Auto-deallocation check failed for ${vmNode.vmName}:`, err.message);
-    }
   }
 }
 
@@ -417,26 +427,10 @@ async function processDeleteServer(job) {
   // 4. Delete GameServer record
   await GameServer.deleteOne({ serverId });
 
-  // 5. Decrement VM server count
+  // 5. Decrement VM server count. Instance shutdown is handled by the timed idle reaper.
   if (vmNode && vmNode.activeServersCount > 0) {
     vmNode.activeServersCount = Math.max(0, vmNode.activeServersCount - 1);
     await vmNode.save();
-
-    // Auto-deallocate if VM is now empty
-    if (vmNode.activeServersCount === 0 && isAwsConfigured && vmNode.status === 'running' && !vmNode.persistent) {
-      try {
-        const statusRes = await daemonRequest(vmNode.ip, 'GET', '/api/daemon/status');
-        const statusData = await statusRes.json();
-        if (!statusData.running || statusData.running.length === 0) {
-          console.log(`[Scheduler] VM ${vmNode.vmName} is now empty. Deallocating...`);
-          await deallocateAwsVM(vmNode.vmName, vmNode.region);
-          vmNode.status = 'deallocated';
-          await vmNode.save();
-        }
-      } catch (e) {
-        console.error(`[Scheduler] Post-delete deallocation check failed:`, e.message);
-      }
-    }
   }
 
   console.log(`[Scheduler] ✅ Server ${serverId} deleted successfully.`);
@@ -445,52 +439,104 @@ async function processDeleteServer(job) {
 // --- Idle VM Reaper ---
 
 async function processIdleReaper() {
-  if (!isAwsConfigured) return;
+  console.log('[Reaper] Checking player-idle servers and idle EC2 nodes...');
+  const now = Date.now();
 
-  console.log('[Reaper] Running idle VM check...');
-  const staleThreshold = new Date(Date.now() - 40_000); // 40s = 4 missed heartbeats (10s interval)
+  if (AUTO_STOP_IDLE_SERVERS) {
+    const onlineServers = await GameServer.find({ status: 'online', vmName: { $exists: true, $ne: '' } });
+    for (const gameServer of onlineServers) {
+      try {
+        const vm = await VMNode.findOne({ vmName: gameServer.vmName });
+        if (!vm || vm.status !== 'running' || !vm.ip || !vm.runningServerIds.includes(gameServer.serverId)) {
+          if (gameServer.noPlayersSince) {
+            gameServer.noPlayersSince = null;
+            await gameServer.save();
+          }
+          continue;
+        }
 
-  // Mark VMs with missed heartbeats as unhealthy (skip if recently updated/booting within last 2 mins)
-  const recentBootThreshold = new Date(Date.now() - 120_000);
+        const response = await fetch(
+          `http://${vm.ip}:4000/api/daemon/players/${encodeURIComponent(gameServer.serverId)}`,
+          { headers: { 'x-daemon-secret': DAEMON_SECRET }, signal: AbortSignal.timeout(5000) }
+        );
+        if (!response.ok) throw new Error(`Player query returned HTTP ${response.status}`);
+        const data = await response.json();
+        if (!Array.isArray(data.players)) throw new Error('Player query returned an invalid response');
+
+        if (data.players.length > 0) {
+          if (gameServer.noPlayersSince) {
+            gameServer.noPlayersSince = null;
+            await gameServer.save();
+          }
+          continue;
+        }
+
+        if (!gameServer.noPlayersSince) {
+          gameServer.noPlayersSince = new Date(now);
+          await gameServer.save();
+          continue;
+        }
+
+        if (now - gameServer.noPlayersSince.getTime() >= EMPTY_SERVER_STOP_MS) {
+          console.log(`[Reaper] ${gameServer.serverId} has had no online players for 10 minutes; stopping it.`);
+          await processStopServer({ data: { serverId: gameServer.serverId } });
+        }
+      } catch (err) {
+        // Do not stop a server based on stale/failed player data. Require a fresh,
+        // continuous period of successful empty-player checks before stopping it.
+        if (gameServer.noPlayersSince) {
+          gameServer.noPlayersSince = null;
+          await gameServer.save().catch(() => {});
+        }
+        console.warn(`[Reaper] Player-idle check failed for ${gameServer.serverId}:`, err.message);
+      }
+    }
+  }
+
+  const staleThreshold = new Date(now - 40_000); // daemon heartbeat cadence is 10 seconds
   const unhealthyResult = await VMNode.updateMany(
-    { 
-      status: 'running', 
+    {
+      status: 'running',
       lastHeartbeat: { $lt: staleThreshold, $ne: null },
-      updatedAt: { $lt: recentBootThreshold } // Ignore recently started VMs
+      updatedAt: { $lt: new Date(now - 120_000) },
     },
     { status: 'unhealthy' }
   );
   if (unhealthyResult.modifiedCount > 0) {
-    console.log(`[Reaper] Marked ${unhealthyResult.modifiedCount} VM(s) as unhealthy (missed heartbeats).`);
+    console.log(`[Reaper] Marked ${unhealthyResult.modifiedCount} VM(s) unhealthy after missed heartbeats.`);
   }
 
-  // Deallocate healthy, idle VMs (running with 0 active processes)
-  // Skip persistent/static VMs — these are user-managed nodes that should stay on.
+  if (!AUTO_STOP_IDLE_EC2) return;
+  if (!isAwsConfigured) {
+    console.warn('[Reaper] EC2 idle stop is enabled but AWS credentials/instance profile are not configured.');
+    return;
+  }
+
+  const busyVmNames = await GameServer.distinct('vmName', {
+    status: { $in: ['queued', 'provisioning', 'deploying', 'online'] },
+    vmName: { $exists: true, $ne: '' },
+  });
   const idleVMs = await VMNode.find({
     status: 'running',
+    instanceId: { $exists: true, $ne: '' },
     runningServerIds: { $size: 0 },
-    persistent: { $ne: true },
-    $or: [
-      { lastHeartbeat: { $gte: staleThreshold } }, // Sent a heartbeat recently. Safe to kill.
-      { lastHeartbeat: null, updatedAt: { $lt: recentBootThreshold } }, // Hung boot: never sent a heartbeat, but been 2+ mins.
-    ]
+    noServersSince: { $lte: new Date(now - EMPTY_INSTANCE_STOP_MS) },
+    lastHeartbeat: { $gte: staleThreshold },
   });
 
   for (const vm of idleVMs) {
+    if (busyVmNames.includes(vm.vmName)) continue;
     try {
-      console.log(`[Reaper] VM ${vm.vmName} has 0 active servers. Deallocating...`);
-      await deallocateAwsVM(vm.vmName, vm.region);
+      console.log(`[Reaper] ${vm.vmName} has had no running servers for 5 minutes; stopping EC2 ${vm.instanceId}.`);
+      await deallocateAwsVM(vm.vmName, vm.region, vm.instanceId);
       vm.status = 'deallocated';
       vm.activeServersCount = 0;
+      vm.noServersSince = null;
       await vm.save();
-      console.log(`[Reaper] ✅ ${vm.vmName} deallocated.`);
+      console.log(`[Reaper] ✅ EC2 for ${vm.vmName} stopped.`);
     } catch (err) {
-      console.error(`[Reaper] Failed to deallocate ${vm.vmName}:`, err.message);
+      console.error(`[Reaper] Failed to stop EC2 for ${vm.vmName}:`, err.message);
     }
-  }
-
-  if (idleVMs.length === 0 && unhealthyResult.modifiedCount === 0) {
-    console.log('[Reaper] All VMs healthy, no idle VMs found.');
   }
 }
 
@@ -545,10 +591,17 @@ async function main() {
     }
   );
 
-  // Register the recurring idle-check job (every 5 minutes)
+  // Replace older idle-check schedules so the timers are checked at one-minute
+  // resolution without leaving a duplicate five-minute repeat job.
+  const repeatJobs = await reaperQueue.getRepeatableJobs();
+  for (const repeatJob of repeatJobs) {
+    if (repeatJob.name === 'check-idle-vms') {
+      await reaperQueue.removeRepeatableByKey(repeatJob.key);
+    }
+  }
   await reaperQueue.add('check-idle-vms', {}, {
-    repeat: { every: 5 * 60 * 1000 },
-    jobId: 'idle-reaper-recurring',
+    repeat: { every: 60 * 1000 },
+    jobId: 'idle-reaper-every-minute',
   });
 
   reaperWorker.on('completed', () => {
@@ -561,7 +614,7 @@ async function main() {
 
   console.log('⚡ CraftHost Scheduler Worker started. Listening for jobs...');
   console.log('   Orchestration queue: crafthost-orchestration (concurrency: 3)');
-  console.log('   Reaper queue: crafthost-reaper (every 5 minutes)');
+  console.log('   Reaper queue: crafthost-reaper (every minute)');
 
   // --- Graceful Shutdown ---
   const shutdown = async (signal) => {

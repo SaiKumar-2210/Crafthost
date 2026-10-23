@@ -75,7 +75,7 @@ jobs:
     name: Deploy to AWS VM
     runs-on: ubuntu-latest
     needs: [backend-tests, frontend-build]
-    # Re-enable only after configuring a reachable VM and setting this repository variable.
+    # Enable after configuring a reachable Docker control-plane VM and its deployment secrets.
     if: github.ref == 'refs/heads/main' && vars.ENABLE_SSH_DEPLOY == 'true'
     
     steps:
@@ -85,61 +85,21 @@ jobs:
         host: ${{ secrets.AWS_VM_IP }}
         username: ${{ secrets.AWS_VM_USERNAME }}
         key: ${{ secrets.AWS_VM_SSH_KEY }}
-        script_stop: false
+        script_stop: true
         command_timeout: 10m
         script: |
-          echo "=== STEP 1: Check git ==="
-          if ! command -v git &> /dev/null; then
-            sudo yum install -y git 2>&1 || sudo apt-get update && sudo apt-get install -y git 2>&1
-          fi
-          echo "git: $(git --version)"
-
-          echo "=== STEP 2: Check Node.js ==="
-          NODE_MAJ=$(node -v 2>/dev/null | grep -oE '^v[0-9]+' | tr -d 'v' || echo 0)
-          echo "Current Node major: $NODE_MAJ"
-          if [ "$NODE_MAJ" -lt 20 ]; then
-            if command -v yum &> /dev/null; then
-              sudo yum remove -y nodejs nodejs18 2>/dev/null || true
-              sudo yum install -y nodejs20 2>&1
-            else
-              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - 2>&1
-              sudo apt-get install -y nodejs 2>&1
-            fi
-          fi
-          echo "Node: $(node -v) | npm: $(npm -v)"
-
-          echo "=== STEP 3: Clone or pull repo ==="
+          set -euo pipefail
           if [ ! -d "/opt/crafthost-control" ]; then
-            sudo git clone https://github.com/${{ github.repository }}.git /opt/crafthost-control 2>&1
+            sudo git clone https://github.com/${{ github.repository }}.git /opt/crafthost-control
           else
             cd /opt/crafthost-control
-            sudo git fetch --all 2>&1
-            sudo git reset --hard origin/main 2>&1
+            sudo git fetch origin main
+            sudo git reset --hard origin/main
           fi
 
-          echo "=== STEP 4: Fix ownership ==="
+          echo "=== Fix ownership ==="
           sudo chown -R $(whoami):$(whoami) /opt/crafthost-control
-
-          echo "=== STEP 5: Clean and install deps ==="
           cd /opt/crafthost-control
-          rm -rf node_modules package-lock.json
-          npm install 2>&1
-          echo "--- Frontend deps done ---"
-          cd backend
-          rm -rf node_modules
-          npm install 2>&1
-          echo "--- Backend deps done ---"
-          cd ..
-
-          echo "=== STEP 6: Build frontend ==="
-          npm run build 2>&1
-          echo "--- Build done ---"
-
-          echo "=== STEP 7: PM2 setup ==="
-          sudo npm install -g pm2 2>&1
-          export PATH=$PATH:$(dirname $(which pm2))
-          pm2 delete all 2>/dev/null || true
-          pm2 start ./backend/control.js --name crafthost-api --max-memory-restart 512M 2>&1 || echo "WARN: control.js pm2 start failed"
-          pm2 start ./backend/scheduler.js --name crafthost-scheduler --max-memory-restart 256M 2>&1 || echo "WARN: scheduler.js pm2 start failed"
-          pm2 save --force 2>&1
-          echo "=== DEPLOY COMPLETE ==="
+          docker compose -f compose.yaml up -d --build control scheduler
+          docker compose -f compose.yaml ps
+          echo "=== Docker deployment complete ==="

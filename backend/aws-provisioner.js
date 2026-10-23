@@ -14,9 +14,11 @@ const crypto = require('crypto');
 
 const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+const hasStaticCredentials = !!(accessKeyId && secretAccessKey);
+const useInstanceProfile = process.env.AWS_INSTANCE_PROFILE_ENABLED === 'true';
 const defaultRegion = process.env.AWS_REGION || "ap-south-1";
 
-const isAwsConfigured = !!(accessKeyId && secretAccessKey);
+const isAwsConfigured = hasStaticCredentials || useInstanceProfile;
 
 const DAEMON_SECRET = process.env.DAEMON_SECRET;
 const rawControlPlaneUrl = process.env.CONTROL_PLANE_URL || 'https://crafthost.saikumar.co.in';
@@ -56,13 +58,14 @@ const SAFE_REGION_METADATA = [
 
 const getAwsClient = (region = defaultRegion) => {
   if (!isAwsConfigured) return null;
-  return new EC2Client({
-    region,
-    credentials: {
+  const clientOptions = { region };
+  if (hasStaticCredentials) {
+    clientOptions.credentials = {
       accessKeyId,
       secretAccessKey
-    }
-  });
+    };
+  }
+  return new EC2Client(clientOptions);
 };
 
 function getNextAwsVMName(region, index) {
@@ -164,7 +167,8 @@ async function doesAwsVMExist(vmName, region) {
   }
 }
 
-async function getAwsInstanceId(vmName, region) {
+async function getAwsInstanceId(vmName, region, instanceId) {
+  if (instanceId) return instanceId;
   const client = getAwsClient(region);
   if (!client) return null;
   const cmd = new DescribeInstancesCommand({
@@ -264,7 +268,7 @@ async function ensureAwsVM(vmName, awsLocation) {
   return { success: true, actualLocation: awsLocation };
 }
 
-async function startAwsVM(vmName, awsLocation) {
+async function startAwsVM(vmName, awsLocation, instanceId) {
   console.log(`[AWS Orchestrator] Request to start VM: ${vmName}`);
   const client = getAwsClient(awsLocation);
   if (!client) {
@@ -272,16 +276,16 @@ async function startAwsVM(vmName, awsLocation) {
     return true;
   }
   
-  const instanceId = await getAwsInstanceId(vmName, awsLocation);
-  if (!instanceId) throw new Error(`VM ${vmName} not found.`);
+  const resolvedInstanceId = await getAwsInstanceId(vmName, awsLocation, instanceId);
+  if (!resolvedInstanceId) throw new Error(`VM ${vmName} has no registered EC2 instance ID.`);
 
-  const cmd = new StartInstancesCommand({ InstanceIds: [instanceId] });
+  const cmd = new StartInstancesCommand({ InstanceIds: [resolvedInstanceId] });
   await client.send(cmd);
   console.log(`[AWS Orchestrator] VM ${vmName} successfully started!`);
   return true;
 }
 
-async function deallocateAwsVM(vmName, awsLocation) {
+async function deallocateAwsVM(vmName, awsLocation, instanceId) {
   console.log(`[AWS Orchestrator] Request to stop VM: ${vmName}`);
   const client = getAwsClient(awsLocation);
   if (!client) {
@@ -289,24 +293,24 @@ async function deallocateAwsVM(vmName, awsLocation) {
     return true;
   }
   
-  const instanceId = await getAwsInstanceId(vmName, awsLocation);
-  if (!instanceId) throw new Error(`VM ${vmName} not found.`);
+  const resolvedInstanceId = await getAwsInstanceId(vmName, awsLocation, instanceId);
+  if (!resolvedInstanceId) throw new Error(`VM ${vmName} has no registered EC2 instance ID.`);
 
-  const cmd = new StopInstancesCommand({ InstanceIds: [instanceId] });
+  const cmd = new StopInstancesCommand({ InstanceIds: [resolvedInstanceId] });
   await client.send(cmd);
   console.log(`[AWS Orchestrator] VM ${vmName} successfully stopped!`);
   return true;
 }
 
-async function getAwsVMPublicIP(vmName, awsLocation) {
+async function getAwsVMPublicIP(vmName, awsLocation, instanceId) {
   const client = getAwsClient(awsLocation);
   if (!client) {
     return process.env.PUBLIC_DOMAIN || "crafthost.saikumar.co.in";
   }
   
-  const cmd = new DescribeInstancesCommand({
-    Filters: [{ Name: "tag:Name", Values: [vmName] }, { Name: "instance-state-name", Values: ["running"] }]
-  });
+  const cmd = new DescribeInstancesCommand(instanceId
+    ? { InstanceIds: [instanceId], Filters: [{ Name: "instance-state-name", Values: ["running"] }] }
+    : { Filters: [{ Name: "tag:Name", Values: [vmName] }, { Name: "instance-state-name", Values: ["running"] }] });
   const res = await client.send(cmd);
   
   if (res.Reservations && res.Reservations.length > 0 && res.Reservations[0].Instances.length > 0) {

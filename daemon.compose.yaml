@@ -15,6 +15,7 @@ services:
       DAEMON_SECRET: ${DAEMON_SECRET:?Set DAEMON_SECRET in daemon.env}
       VM_NAME: ${VM_NAME:?Set VM_NAME in daemon.env}
       VM_REGION: ${VM_REGION:?Set VM_REGION in daemon.env}
+      VM_INSTANCE_ID: ${VM_INSTANCE_ID:-}
       VM_PUBLIC_IP: ${VM_PUBLIC_IP:-}
       MAX_SERVER_SLOTS: ${MAX_SERVER_SLOTS:-5}
       MINECRAFT_BIND_IP: ${MINECRAFT_BIND_IP:-0.0.0.0}
@@ -26,6 +27,8 @@ services:
       # these same paths into each Minecraft container.
       - ${DAEMON_DATA_PATH:-/opt/crafthost-data}:/opt/crafthost-data
       - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "4000:4000"
     # Minecraft ports are published directly by the host Docker daemon.

@@ -25,6 +25,12 @@ Requirements: Docker Engine with the Compose plugin.
 
 MongoDB and Redis run in the same Compose project with persistent named volumes. AWS credentials are optional; without them, add daemon nodes manually. The legacy AWS provisioning integration requires AWS access and is not needed to host manually configured nodes.
 
+### Idle shutdown
+
+The scheduler stops a Minecraft server after ten continuous minutes with an empty RCON player list. Failed player-list queries reset the timer and never count as an empty server. The check runs once per minute.
+
+Stopping daemon EC2 instances is opt-in. To enable it, set `AUTO_STOP_IDLE_EC2=true` and `AWS_INSTANCE_PROFILE_ENABLED=true` in the control-plane `.env`, attach an IAM role to the control-plane EC2 with `DescribeInstances`, `StartInstances`, and `StopInstances` permissions for the daemon instances, and set each daemon's unique `VM_NAME` and exact `VM_INSTANCE_ID` in `daemon.env`. Keep `DAEMON_SECRET` identical on all nodes. Since the control and scheduler run in containers, configure the control EC2's IMDSv2 response hop limit to at least `2` so the AWS SDK can retrieve role credentials from inside Docker. The scheduler stops an instance after five minutes with no running Minecraft processes and starts it when a server on that node is requested. Keep Elastic IPs associated with the instances if their player-facing addresses must remain stable. If the instance ID or IAM permissions are missing, the scheduler does not stop the instance.
+
 ## Daemon node (repeat per machine)
 
 Each node needs a Linux host with Docker Engine, internet access to the control plane, a unique public IP, and firewall access for the daemon API plus the Minecraft ports you allocate. The daemon uses the host Docker socket to start one Minecraft container per game server. Access to that socket is equivalent to root access on the node; only run the daemon on machines you control.

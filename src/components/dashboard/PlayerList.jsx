@@ -10,6 +10,7 @@ export default function PlayerList({ visible = false }) {
   const [players, setPlayers] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
+  const [playersError, setPlayersError] = useState('')
 
   const server = servers.find(s => s.id === id)
   const isOnline = server?.status === 'online'
@@ -17,6 +18,7 @@ export default function PlayerList({ visible = false }) {
   const fetchPlayers = async () => {
     if (!isOnline) {
       setPlayers([])
+      setPlayersError('')
       setLoading(false)
       return
     }
@@ -25,12 +27,16 @@ export default function PlayerList({ visible = false }) {
       const res = await fetch(`${API_BASE}/servers/${id}/players`, {
         headers: getAuthHeaders()
       })
+      const data = await res.json().catch(() => ({}))
       if (res.ok) {
-        const data = await res.json()
         setPlayers(data.players || [])
+        setPlayersError('')
+      } else {
+        setPlayersError(data.error || 'Could not retrieve the live player list.')
       }
-    } catch {
-      console.error("Failed fetching players")
+    } catch (error) {
+      console.error('Failed fetching players:', error)
+      setPlayersError('Could not reach the daemon. Check that the node is online and reachable.')
     } finally {
       setLoading(false)
     }
@@ -102,6 +108,8 @@ export default function PlayerList({ visible = false }) {
           <tbody>
             {loading && players.length === 0 ? (
                <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem' }}>Querying server...</td></tr>
+            ) : playersError ? (
+               <tr><td colSpan="4" role="alert" style={{ textAlign: 'center', padding: '2rem', color: 'var(--status-danger)' }}>{playersError}</td></tr>
             ) : filteredPlayers.length === 0 ? (
                <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>No players online</td></tr>
             ) : filteredPlayers.map((player, i) => (
@@ -125,7 +133,7 @@ export default function PlayerList({ visible = false }) {
                 </td>
                 <td>
                   <span className={`ping-text ${parseInt(player.ping) > 100 ? 'ping-high' : 'ping-low'}`}>
-                    {player.ping}ms
+                    {player.ping == null ? <span title="Per-player latency is not available from the server's RCON list command">—</span> : `${player.ping}ms`}
                   </span>
                 </td>
                 <td>
