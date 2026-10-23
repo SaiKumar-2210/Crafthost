@@ -85,10 +85,11 @@ jobs:
         host: ${{ secrets.AWS_VM_IP }}
         username: ${{ secrets.AWS_VM_USERNAME }}
         key: ${{ secrets.AWS_VM_SSH_KEY }}
-        script_stop: true
         command_timeout: 10m
         script: |
-          set -euo pipefail
+          # appleboy executes remote scripts through the login shell; keep this POSIX-compatible.
+          set -e
+          echo "=== Docker deployment starting ==="
           if [ ! -d "/opt/crafthost-control" ]; then
             sudo git clone https://github.com/${{ github.repository }}.git /opt/crafthost-control
           else
