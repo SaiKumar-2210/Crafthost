@@ -39,19 +39,25 @@ async function updateJob(jobId, fields) {
   }
 }
 
-async function daemonRequest(ip, method, path, body) {
+async function daemonRequest(ip, method, path, body, timeoutMs = 5000) {
   const url = `http://${ip}:4000${path}`;
   const opts = {
     method,
     headers: { 'x-daemon-secret': DAEMON_SECRET },
-    signal: AbortSignal.timeout(5000),
+    signal: AbortSignal.timeout(timeoutMs),
   };
   if (body) {
     opts.headers['Content-Type'] = 'application/json';
     opts.body = JSON.stringify(body);
   }
-  const res = await fetch(url, opts);
-  return res;
+  try {
+    return await fetch(url, opts);
+  } catch (err) {
+    if (err.name === 'AbortError' || err.name === 'TimeoutError') {
+      throw new Error(`Timed out waiting for the VM daemon at ${ip} after ${Math.ceil(timeoutMs / 1000)} seconds.`);
+    }
+    throw err;
+  }
 }
 
 async function waitForIP(vmName, region, instanceId, maxAttempts = 15, intervalMs = 4000) {
@@ -312,7 +318,7 @@ async function processDeployServer(job) {
       versionNumber: versionNumber || '1.21.11',
       publicIp: vm.ip,
       node: region,
-    });
+    }, 30000);
 
     if (!daemonRes.ok) {
       const errText = await daemonRes.text();
