@@ -524,7 +524,6 @@ async function processIdleReaper() {
   });
   const idleVMs = await VMNode.find({
     status: 'running',
-    instanceId: { $exists: true, $ne: '' },
     runningServerIds: { $size: 0 },
     noServersSince: { $lte: new Date(now - EMPTY_INSTANCE_STOP_MS) },
     lastHeartbeat: { $gte: staleThreshold },
@@ -533,7 +532,7 @@ async function processIdleReaper() {
   for (const vm of idleVMs) {
     if (busyVmNames.includes(vm.vmName)) continue;
     try {
-      console.log(`[Reaper] ${vm.vmName} has had no running servers for 5 minutes; stopping EC2 ${vm.instanceId}.`);
+      console.log(`[Reaper] ${vm.vmName} has had no running servers for 5 minutes; stopping its EC2 instance.`);
       await deallocateAwsVM(vm.vmName, vm.region, vm.instanceId);
       vm.status = 'deallocated';
       vm.activeServersCount = 0;
